@@ -1,0 +1,11 @@
+torch
+torchvision
+mlflow
+bentoml
+streamlit
+dvc
+prometheus-client
+pandas
+scikit-learn
+pillow
+matplotlib

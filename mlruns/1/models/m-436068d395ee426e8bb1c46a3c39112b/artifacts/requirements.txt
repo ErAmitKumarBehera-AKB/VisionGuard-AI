@@ -1,0 +1,9 @@
+mlflow==3.14.0
+cloudpickle==3.1.2
+numpy==2.2.6
+nvidia-ml-py==13.610.43
+pandas==2.3.3
+pydot==4.0.1
+torch==2.12.1
+torchvision==0.27.1
+tqdm==4.68.3

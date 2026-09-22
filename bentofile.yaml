@@ -1,0 +1,13 @@
+service: "src.serve:CastingInspectionService"
+labels:
+  owner: "quality-control"
+  project: "visual-quality-inspection"
+include:
+  - "src/serve.py"
+  - "models/model.pth"
+python:
+  packages:
+    - torch
+    - torchvision
+    - pillow
+    - prometheus-client
