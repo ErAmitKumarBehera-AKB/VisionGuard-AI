@@ -259,7 +259,10 @@ Prometheus scrapes metrics from the backend and BentoML serving endpoints every 
 Launch the entire ecosystem with Docker Compose:
 
 ```bash
-# Build and run backend, serving, qc, prometheus, and grafana
+# 1. Create your environment file
+cp .env.example .env
+
+# 2. Build and run backend, serving, qc, frontend, prometheus, and grafana
 docker compose up -d --build
 
 # View logs
@@ -269,7 +272,6 @@ docker compose logs -f
 docker compose down
 ```
 
-*(Note: The frontend container is intentionally excluded because `frontend/` is reserved for your Replit code).*
 
 ---
 
@@ -323,28 +325,11 @@ docker compose -f edge/docker-compose.arm64.yml up -d --build
 
 ---
 
-## 18. Placing Your Replit Frontend into `frontend/`
+## 18. Integrated React Frontend Dashboard
 
-The `frontend/` directory has been intentionally created and left **completely empty**.
-
-### Steps to Integrate Your Replit Frontend:
-1. Export or download your frontend project zip/files from Replit.
-2. Extract or copy the entire contents directly into `frontend/`:
-   ```bash
-   # Example:
-   cp -r /path/to/replit-frontend/* frontend/
-   ```
-3. Your `frontend/` folder will then contain your standard frontend structure (e.g. `package.json`, `src/`, `vite.config.js` or `next.config.js`).
-4. In your frontend configuration or `.env`, point the API Base URL to the FastAPI backend:
-   ```env
-   VITE_API_BASE_URL=http://localhost:8000
-   ```
-5. Install frontend dependencies and run:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+The `frontend/` directory contains a full modern React application built with Vite and Tailwind CSS. 
+It is automatically orchestrated by Docker Compose on port `5173`. 
+The dashboard provides a real-time command center for monitoring inspections, metrics, and quality alerts.
 
 ---
 
