@@ -1,10 +1,9 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -16,19 +15,130 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual environments
+# Virtual Environments
 .env
-.venv
+.env.*
+!.env.example
+.venv/
 env/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
-# Large models
-# *.pth
+# IDE & Operating System
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 
-# Teammate tools
-git-portable/
+# Raw, Interim, Processed Datasets & Manifests
+ml/data/raw/*
+!ml/data/raw/.gitkeep
+ml/data/interim/*
+!ml/data/interim/.gitkeep
+ml/data/processed/*
+!ml/data/processed/.gitkeep
+ml/data/manifests/*
+!ml/data/manifests/.gitkeep
+data/
+*.parquet
+
+# ML Checkpoints, Model Weights & Artifacts
+ml/artifacts/checkpoints/*
+!ml/artifacts/checkpoints/.gitkeep
+ml/artifacts/exported/*
+!ml/artifacts/exported/.gitkeep
+ml/artifacts/reports/*
+!ml/artifacts/reports/.gitkeep
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.ckpt
+*.bin
+*.joblib
+
+# MLflow Tracking & Artifacts
+mlflow.db
+mlruns/
+mlartifacts/
+
+# BentoML Model Store
+.bentoml/
+bentoml/
+
+# Databases & Runtime Storage
+*.db
+*.sqlite
+*.sqlite3
+backend/app/inspection.db
+backend/app/storage/images/*
+!backend/app/storage/images/.gitkeep
+qc/data/*
+!qc/data/.gitkeep
+
+# Logs & Metrics
+*.log
+logs/
+*.pid
+coverage/
+.coverage.*
+
+# Testing & Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# DVC local cache & tmp
+.dvc/cache
+.dvc/tmp
+
+# Docker local overrides and persisted service data
+docker-compose.override.yml
+docker-compose.*.override.yml
+mongodb_data/
+mongo_data/
+
+# Package manager caches and logs
+.pnpm-store/
+.npm/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backup & Temporary files
+*.bak
+*.backup
+*.backup*
+*.tmp
+*.temp
+
+# Frontend dependencies and build output
+node_modules/
+frontend/**/node_modules/
+frontend/**/dist/
+frontend/**/.vite/
+frontend/**/.turbo/
+*.tsbuildinfo
+
+# Local camera captures
+*.jpg
+*.jpeg
+*.png
+*.webp
+!frontend/attached_assets/**
+!frontend/screenshots/**

@@ -1,0 +1,22 @@
+FROM --platform=linux/arm64 python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /edge_app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgl1 \
+    libglib2.0-0 \
+    v4l-utils \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /edge_app/requirements.txt
+RUN pip install --no-cache-dir -r /edge_app/requirements.txt
+
+COPY ml /edge_app/ml
+COPY edge /edge_app/edge
+
+CMD ["python", "edge/scripts/edge_runner.py", "--cycles", "0"]

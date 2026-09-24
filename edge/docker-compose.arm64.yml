@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  edge-inspection-node:
+    build:
+      context: ..
+      dockerfile: edge/Dockerfile.arm64
+    container_name: rpi5_edge_inspection
+    restart: unless-stopped
+    devices:
+      - "/dev/video0:/dev/video0"
+    environment:
+      - EDGE_DEVICE_ID=rpi5-node-01
+      - BACKEND_API_URL=http://host.docker.internal:8000
+    volumes:
+      - ../ml/artifacts/checkpoints:/edge_app/ml/artifacts/checkpoints:ro
+      - ../edge/config:/edge_app/edge/config:ro
+    deploy:
+      resources:
+        limits:
+          memory: 4096M

@@ -1,0 +1,44 @@
+prepare:
+  mvtec_dir: "ml/data/raw/mvtec"
+  casting_dir: "ml/data/raw/casting"
+  output_manifest_csv: "ml/data/manifests/unified_manifest.csv"
+  output_manifest_parquet: "ml/data/manifests/unified_manifest.parquet"
+  mvtec_categories:
+    - "cable"
+    - "screw"
+    - "metal_nut"
+    - "transistor"
+  train_ratio: 0.70
+  val_ratio: 0.15
+  test_ratio: 0.15
+  random_seed: 42
+  stratify_by: ["source_dataset", "product_category", "binary_label"]
+
+model:
+  architecture: "resnet50"
+  pretrained: true
+  num_classes: 2
+  classes: ["OK", "DEFECT"]
+  dropout_rate: 0.3
+  freeze_backbone_epochs: 2
+
+train:
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+  epochs: 15
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  optimizer: "adamw"
+  scheduler: "cosine"
+  mixed_precision: true
+  defect_loss_weight: 1.5
+  early_stopping_patience: 5
+  seed: 42
+
+evaluate:
+  batch_size: 32
+  threshold: 0.50
+  target_defect_recall: 0.95
+  output_report_json: "ml/artifacts/reports/evaluation_metrics.json"
+  output_confusion_matrix: "ml/artifacts/reports/confusion_matrix.png"
