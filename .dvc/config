@@ -1,4 +1,2 @@
 [core]
-    remote = local_remote
-['remote "local_remote"']
-    url = ../data/dvc_remote
+    no_scm = True

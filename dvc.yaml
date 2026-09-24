@@ -1,0 +1,56 @@
+stages:
+  prepare_dataset:
+    cmd: python ml/scripts/prepare_dataset.py --config ml/configs/dataset.yaml
+    deps:
+      - ml/src/data
+      - ml/scripts/prepare_dataset.py
+      - ml/configs/dataset.yaml
+    params:
+      - prepare.mvtec_dir
+      - prepare.casting_dir
+      - prepare.train_ratio
+      - prepare.val_ratio
+      - prepare.test_ratio
+      - prepare.random_seed
+    outs:
+      - ml/data/manifests/unified_manifest.csv:
+          cache: true
+      - ml/data/manifests/unified_manifest.parquet:
+          cache: true
+
+  train:
+    cmd: python ml/scripts/train.py --config ml/configs/training.yaml
+    deps:
+      - ml/src/models
+      - ml/src/training
+      - ml/scripts/train.py
+      - ml/configs/training.yaml
+      - ml/data/manifests/unified_manifest.parquet
+    params:
+      - train.image_size
+      - train.batch_size
+      - train.epochs
+      - train.learning_rate
+      - train.optimizer
+      - model.architecture
+    outs:
+      - ml/artifacts/checkpoints/best_model.pt:
+          cache: true
+      - ml/artifacts/checkpoints/training_metadata.json:
+          cache: true
+
+  evaluate:
+    cmd: python ml/scripts/evaluate.py --checkpoint ml/artifacts/checkpoints/best_model.pt
+    deps:
+      - ml/src/training/evaluate.py
+      - ml/scripts/evaluate.py
+      - ml/artifacts/checkpoints/best_model.pt
+      - ml/data/manifests/unified_manifest.parquet
+    params:
+      - evaluate.threshold
+    metrics:
+      - ml/artifacts/reports/evaluation_metrics.json:
+          cache: false
+    plots:
+      - ml/artifacts/reports/confusion_matrix.png:
+          cache: false
