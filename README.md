@@ -49,10 +49,13 @@ Central Platform
 
 ## 3. Dataset Setup & Exact Placement
 
-The system ingests two public industrial quality inspection datasets:
+Because the datasets total over 6GB, they are not stored on GitHub. Your teammates must manually download them from their sources (like Kaggle) and extract them into the correct folders before running the system.
 
 ### A. MVTec Anomaly Detection (MVTec AD)
-- **Source**: [MVTec AD Dataset Portal](https://www.mvtec.com/company/research/datasets/mvtec-ad)
+**Step 1:** Download the dataset from the [MVTec AD Dataset Portal](https://www.mvtec.com/company/research/datasets/mvtec-ad).
+**Step 2:** Extract the downloaded ZIP file.
+**Step 3:** Move the extracted category folders (`cable`, `screw`, `metal_nut`, `transistor`) exactly into the `ml/data/raw/mvtec/` directory.
+
 - **Target Categories**: `cable`, `screw`, `metal_nut`, `transistor`
 - **Expected Directory Structure**:
   ```
@@ -72,7 +75,10 @@ The system ingests two public industrial quality inspection datasets:
   ```
 
 ### B. Casting Product Image Data for Quality Inspection
-- **Source**: [Kaggle - Casting Product Image Data](https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product)
+**Step 1:** Download the dataset from [Kaggle - Casting Product Image Data](https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product).
+**Step 2:** Extract the downloaded ZIP file (specifically the `casting_data/casting_data/` folder).
+**Step 3:** Move the `ok_front` and `def_front` folders exactly into the `ml/data/raw/casting/` directory.
+
 - **Expected Directory Structure**:
   ```
   ml/data/raw/casting/
