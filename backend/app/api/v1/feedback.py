@@ -5,6 +5,7 @@ from ...models.inspection import OperatorFeedback
 from ...schemas.feedback import OperatorFeedbackRequest, OperatorFeedbackResponse
 from ...services.inspection_service import InspectionService
 from ...utils.database import get_db
+from ...auth.security import require_admin
 
 router = APIRouter(prefix="/feedback", tags=["Human Feedback"])
 inspection_service = InspectionService()
@@ -19,6 +20,7 @@ inspection_service = InspectionService()
 def submit_feedback(
     feedback: OperatorFeedbackRequest,
     db: Session = Depends(get_db),
+    admin=Depends(require_admin),
 ) -> OperatorFeedbackResponse:
     try:
         fb_entry = inspection_service.register_feedback(db=db, feedback=feedback)
@@ -41,6 +43,7 @@ def submit_feedback(
 )
 def export_feedback_dataset(
     db: Session = Depends(get_db),
+    admin=Depends(require_admin),
 ) -> dict:
     records = db.query(OperatorFeedback).all()
     feedback_data = [

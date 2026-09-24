@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY ml /app/ml
 ARG APP_REV=20260924
 RUN echo "backend revision ${APP_REV}"
 COPY backend /app/backend

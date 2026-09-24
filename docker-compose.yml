@@ -38,8 +38,12 @@ services:
       - MODEL_CHECKPOINT_PATH=/app/ml/artifacts/checkpoints/best_model.pt
       - DEFECT_THRESHOLD=0.50
       - DEVICE=${MODEL_DEVICE:-cpu}
+      - OMP_NUM_THREADS=${MODEL_THREADS:-1}
+      - MKL_NUM_THREADS=${MODEL_THREADS:-1}
     volumes:
       - ./ml/artifacts/checkpoints:/app/ml/artifacts/checkpoints:ro
+    mem_limit: 3g
+    cpus: 2.0
     networks:
       - inspection-net
 
@@ -63,6 +67,7 @@ services:
       - MONGO_DB=visioninspect
       - IMAGE_STORAGE_PATH=/app/data/images
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in .env before starting the backend}
+      - ALLOW_IN_PROCESS_FALLBACK=false
       - BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-}
       - BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:-}
       - BOOTSTRAP_SUPERVISOR_EMAIL=${BOOTSTRAP_SUPERVISOR_EMAIL:-}
@@ -71,6 +76,8 @@ services:
     volumes:
       - sqlite_data:/app/data
       - ./ml/artifacts/checkpoints:/app/ml/artifacts/checkpoints:ro
+    mem_limit: 1g
+    cpus: 1.0
     networks:
       - inspection-net
 
@@ -93,10 +100,13 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+    mem_limit: 256m
+    cpus: 0.5
     networks:
       - inspection-net
 
   qc:
+    profiles: ["ops"]
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -123,6 +133,7 @@ services:
       - inspection-net
 
   prometheus:
+    profiles: ["ops"]
     image: prom/prometheus:v2.50.1
     container_name: mfg_prometheus
     restart: unless-stopped
@@ -144,6 +155,7 @@ services:
       - inspection-net
 
   grafana:
+    profiles: ["ops"]
     image: grafana/grafana:10.3.3
     container_name: mfg_grafana
     restart: unless-stopped

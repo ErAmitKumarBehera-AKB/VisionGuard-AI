@@ -2,6 +2,7 @@ import asyncio
 from pathlib import Path
 from typing import Any, Optional
 import httpx
+import mimetypes
 from PIL import Image
 
 from ..config import settings
@@ -59,7 +60,7 @@ class BentoMLClient:
         source_dataset: Optional[str] = None,
     ) -> dict[str, Any]:
         url = f"{self.base_url}/predict"
-        files = {"image": (filename, image_bytes, "image/png")}
+        files = {"image": (filename, image_bytes, mimetypes.guess_type(filename)[0] or "image/jpeg")}
         data: dict[str, Any] = {}
         if product_category:
             data["product_category"] = product_category
@@ -77,6 +78,8 @@ class BentoMLClient:
                 "Engaging in-process ResNet-50 fallback predictor."
             )
 
+        if not settings.ALLOW_IN_PROCESS_FALLBACK:
+            raise RuntimeError("BentoML inference service is unavailable")
         predictor = self._get_fallback_predictor()
         return await asyncio.to_thread(
             predictor.predict,

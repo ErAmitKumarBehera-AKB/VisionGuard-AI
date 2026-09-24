@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     BACKEND_PORT: int = 8000
 
     BENTOML_SERVICE_URL: str = "http://localhost:3000"
-    BENTOML_TIMEOUT_SECONDS: float = 10.0
+    BENTOML_TIMEOUT_SECONDS: float = 5.0
+    ALLOW_IN_PROCESS_FALLBACK: bool = False
 
     MODEL_CHECKPOINT_PATH: str = "ml/artifacts/checkpoints/best_model.pt"
 
@@ -32,6 +33,8 @@ class Settings(BaseSettings):
     MONGO_DB: str = "visioninspect"
     JWT_SECRET: str = ""
     JWT_EXPIRE_MINUTES: int = 60
+    ADMIN_EMAIL: str = ""
+    ADMIN_PASSWORD: str = ""
     BOOTSTRAP_ADMIN_EMAIL: str = ""
     BOOTSTRAP_ADMIN_PASSWORD: str = ""
     BOOTSTRAP_SUPERVISOR_EMAIL: str = ""

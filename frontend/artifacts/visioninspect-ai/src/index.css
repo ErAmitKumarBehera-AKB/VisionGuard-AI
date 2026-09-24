@@ -105,3 +105,5 @@
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 20px; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+video + canvas + div > div > p { display: none; }

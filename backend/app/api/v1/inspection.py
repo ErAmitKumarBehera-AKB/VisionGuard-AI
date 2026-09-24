@@ -13,6 +13,7 @@ from ...schemas.inspection import (
 from ...services.inspection_service import InspectionService
 from ...utils.database import get_db
 from ...config import settings
+from ...auth.security import require_admin
 
 router = APIRouter(prefix="/inspection", tags=["Inspection"])
 inspection_service = InspectionService()
@@ -29,6 +30,7 @@ async def predict_inspection(
     product_category: Optional[str] = Form(None, description="e.g. 'cable', 'screw', 'metal_nut', 'casting'"),
     source_dataset: Optional[str] = Form(None, description="e.g. 'mvtec', 'casting'"),
     db: Session = Depends(get_db),
+    admin=Depends(require_admin),
 ) -> InspectionPredictResponse:
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(
@@ -78,6 +80,7 @@ def get_inspection_history(
     product_category: Optional[str] = Query(None, description="Filter by product category"),
     low_confidence_only: bool = Query(False, description="Filter only low-confidence inspections"),
     db: Session = Depends(get_db),
+    admin=Depends(require_admin),
 ) -> InspectionHistoryResponse:
     return inspection_service.get_history(
         db=db,
@@ -96,6 +99,7 @@ def get_inspection_history(
 )
 def get_inspection_summary(
     db: Session = Depends(get_db),
+    admin=Depends(require_admin),
 ) -> InspectionSummaryStats:
     return inspection_service.get_summary_stats(db=db)
 
@@ -108,6 +112,7 @@ def get_inspection_summary(
 def get_inspection_detail(
     inspection_id: str,
     db: Session = Depends(get_db),
+    admin=Depends(require_admin),
 ) -> InspectionDetailResponse:
     record = inspection_service.get_inspection_by_id(db=db, inspection_id=inspection_id)
     if not record:

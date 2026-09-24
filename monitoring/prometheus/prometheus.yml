@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: "manufacturing-backend"
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["backend:8000", "localhost:8000"]
+      - targets: ["backend:8000"]
         labels:
           service: "fastapi-backend"
           tier: "api"
@@ -14,7 +14,7 @@ scrape_configs:
   - job_name: "bentoml-model-serving"
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["serving:3000", "localhost:3000"]
+      - targets: ["serving:3000"]
         labels:
           service: "bentoml-resnet50"
           tier: "ml-inference"

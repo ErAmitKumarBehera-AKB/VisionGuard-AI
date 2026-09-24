@@ -31,10 +31,11 @@ def _seed_configured_accounts(database):
         {"$setOnInsert": {"_id": uuid.uuid4().hex, "machine_id": machine_id, "machine_code": "EDGE-04", "name": "Northline Plant 04", "description": "Primary visual inspection line", "status": "ACTIVE", "created_at": utcnow(), "updated_at": utcnow()}},
         upsert=True,
     )
-    accounts = [
-        (settings.BOOTSTRAP_ADMIN_EMAIL, settings.BOOTSTRAP_ADMIN_PASSWORD, "Platform Administrator", "ADMIN", None, "admin-001"),
-        (settings.BOOTSTRAP_SUPERVISOR_EMAIL, settings.BOOTSTRAP_SUPERVISOR_PASSWORD, "Quality Operator", "SUPERVISOR", machine_id, "operator-001"),
-    ]
+    admin_email = settings.ADMIN_EMAIL or settings.BOOTSTRAP_ADMIN_EMAIL
+    admin_password = settings.ADMIN_PASSWORD or settings.BOOTSTRAP_ADMIN_PASSWORD
+    accounts = [(admin_email, admin_password, "Platform Administrator", "ADMIN", None, "admin-001")]
+    if settings.ENVIRONMENT == "development":
+        accounts.append((settings.BOOTSTRAP_SUPERVISOR_EMAIL, settings.BOOTSTRAP_SUPERVISOR_PASSWORD, "Quality Operator", "SUPERVISOR", machine_id, "operator-001"))
     for email, password, name, role, assigned_machine, employee_id in accounts:
         if not email or not password:
             continue
