@@ -9,7 +9,7 @@ Manufacturing visual quality inspection platform with a backend-ready React clie
 - `pnpm --filter @workspace/visioninspect-ai run typecheck` checks the frontend.
 - `pnpm run build` typechecks and builds the workspace.
 
-The frontend uses `src/services/api.ts` for authentication, inspections, feedback, and notifications. The UI renders empty states until the corresponding API endpoints provide data; no local records, timestamps, or simulated inference are bundled.
+The frontend uses `src/services/api.ts` for authentication, inspections, feedback, and notifications. The UI renders empty states until the corresponding API endpoints provide data; no bundled records, timestamps, or inference results are included.
 
 ## Stack
 

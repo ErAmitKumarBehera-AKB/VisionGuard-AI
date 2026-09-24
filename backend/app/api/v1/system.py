@@ -3,6 +3,7 @@ import torch
 
 from ...config import settings
 from ...services.bentoml_client import BentoMLClient
+from ...utils.mongo import mongo_available
 
 router = APIRouter(prefix="/system", tags=["System"])
 bentoml_client = BentoMLClient()
@@ -32,7 +33,10 @@ async def get_system_status() -> dict:
             "device_count": torch.cuda.device_count() if gpu_available else 0,
         },
         "database": {
-            "url_schema": settings.DATABASE_URL.split(":///")[0],
-            "connected": True,
+            "primary": "mongodb",
+            "url_schema": "mongodb",
+            "connected": mongo_available(),
+            "name": settings.MONGO_DB,
+            "legacy_sqlite_compatibility": True,
         },
     }

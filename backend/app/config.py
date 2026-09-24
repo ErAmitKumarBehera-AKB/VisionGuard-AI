@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     MONGO_DB: str = "visioninspect"
     JWT_SECRET: str = ""
     JWT_EXPIRE_MINUTES: int = 60
+    BOOTSTRAP_ADMIN_EMAIL: str = ""
+    BOOTSTRAP_ADMIN_PASSWORD: str = ""
+    BOOTSTRAP_SUPERVISOR_EMAIL: str = ""
+    BOOTSTRAP_SUPERVISOR_PASSWORD: str = ""
 
     @property
     def image_storage_dir(self) -> Path:

@@ -19,9 +19,11 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing database schema...")
     init_db()
     logger.info("Database schema initialized.")
-    if mongo_available():
-        init_mongo()
-        logger.info("MongoDB indexes initialized.")
+    if not mongo_available():
+        logger.error("MongoDB is unavailable; authenticated API cannot start.")
+        raise RuntimeError("MongoDB is unavailable")
+    init_mongo()
+    logger.info("MongoDB indexes and configured bootstrap accounts initialized.")
     yield
     logger.info("Shutting down API server...")
 
@@ -53,10 +55,13 @@ app.include_router(secure_router, prefix="/api/v1")
 
 @app.get("/health", tags=["Health"], summary="Liveness and readiness check")
 def health_check() -> dict:
+    if not mongo_available():
+        return Response(content='{"status":"unhealthy","reason":"MongoDB unavailable"}', status_code=503, media_type="application/json")
     return {
         "status": "healthy",
         "service": "manufacturing-quality-inspection-backend",
         "environment": settings.ENVIRONMENT,
+        "database": "mongodb",
     }
 
 

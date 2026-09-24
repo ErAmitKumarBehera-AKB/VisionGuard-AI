@@ -278,7 +278,7 @@ docker compose down
 Targeting an 8GB Raspberry Pi 5 with hardware sensor stubs:
 
 ```bash
-# Run edge runner in simulation mode
+# Run edge runner in development mode
 python edge/scripts/edge_runner.py --cycles 10
 
 # Or build and launch ARM64 container on Raspberry Pi:
