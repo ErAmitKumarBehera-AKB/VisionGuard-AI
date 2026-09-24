@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: "Industrial Quality Inspection"
+    orgId: 1
+    folder: "Manufacturing Operations"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

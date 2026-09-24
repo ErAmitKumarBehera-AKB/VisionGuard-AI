@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "VisionInspect AI"
+description = "A production-style frontend for AI-powered manufacturing visual inspection, with inspection workflows, quality-control review, system monitoring, model lifecycle views, analytics, and role-based mock access."
+version = "1.0.0"
+id = "artifacts/visioninspect-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20465
+
+[services.development]
+run = "pnpm --filter @workspace/visioninspect-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/visioninspect-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/visioninspect-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20465"
+BASE_PATH = "/"

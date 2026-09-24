@@ -1,0 +1,53 @@
+raw_data:
+  mvtec:
+    root_dir: "ml/data/raw/mvtec"
+    enabled: true
+    categories:
+      - "bottle"
+      - "cable"
+      - "capsule"
+      - "carpet"
+      - "grid"
+      - "hazelnut"
+      - "leather"
+      - "metal_nut"
+      - "pill"
+      - "screw"
+      - "tile"
+      - "toothbrush"
+      - "transistor"
+      - "wood"
+      - "zipper"
+
+  casting:
+    root_dir: "ml/data/raw/casting"
+    enabled: true
+    product_category: "casting_impeller"
+
+storage:
+  interim_dir: "ml/data/interim"
+  processed_dir: "ml/data/processed"
+  manifest_dir: "ml/data/manifests"
+  manifest_csv: "ml/data/manifests/unified_manifest.csv"
+  manifest_parquet: "ml/data/manifests/unified_manifest.parquet"
+
+splitting:
+  train_ratio: 0.70
+  val_ratio: 0.15
+  test_ratio: 0.15
+  random_seed: 42
+  stratify_columns:
+    - "source_dataset"
+    - "product_category"
+    - "binary_label"
+  isolate_test_set: true
+
+validation:
+  min_image_size: [32, 32]
+  allowed_extensions:
+    - ".png"
+    - ".jpg"
+    - ".jpeg"
+    - ".bmp"
+    - ".tiff"
+  verify_file_integrity: true

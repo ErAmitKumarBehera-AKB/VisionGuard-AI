@@ -1,0 +1,99 @@
+networks:
+  inspection-net:
+    driver: bridge
+
+volumes:
+  sqlite_data:
+  prometheus_data:
+  grafana_data:
+
+services:
+  serving:
+    build:
+      context: .
+      dockerfile: serving/Dockerfile
+    container_name: mfg_bentoml_serving
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - MODEL_CHECKPOINT_PATH=/app/ml/artifacts/checkpoints/best_model.pt
+      - DEFECT_THRESHOLD=0.50
+      - DEVICE=${MODEL_DEVICE:-cpu}
+    volumes:
+      - ./ml/artifacts/checkpoints:/app/ml/artifacts/checkpoints:ro
+    networks:
+      - inspection-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mfg_fastapi_backend
+    restart: unless-stopped
+    depends_on:
+      - serving
+    ports:
+      - "8000:8000"
+    environment:
+      - BENTOML_SERVICE_URL=http://serving:3000
+      - DATABASE_URL=sqlite:////app/data/inspection.db
+      - IMAGE_STORAGE_PATH=/app/data/images
+      - ENVIRONMENT=production
+    volumes:
+      - sqlite_data:/app/data
+      - ./ml/artifacts/checkpoints:/app/ml/artifacts/checkpoints:ro
+    networks:
+      - inspection-net
+
+  qc:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: mfg_streamlit_qc
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_API_URL=http://backend:8000
+    command: ["streamlit", "run", "qc/app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+    volumes:
+      - ./qc:/app/qc
+      - ./backend/app/storage:/app/backend/app/storage:ro
+    networks:
+      - inspection-net
+
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: mfg_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      - inspection-net
+
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: mfg_grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - inspection-net

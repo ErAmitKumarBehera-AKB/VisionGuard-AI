@@ -1,0 +1,51 @@
+training:
+  seed: 42
+  device: "auto"
+
+  image_size: 512
+  batch_size: 8
+  num_workers: 4
+  pin_memory: true
+
+  epochs: 30
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  optimizer: "adamw"
+
+  scheduler:
+    type: "cosine"
+    min_lr: 1.0e-6
+    step_size: 5
+    gamma: 0.5
+
+  loss:
+    type: "cross_entropy"
+    label_smoothing: 0.05
+    defect_weight: 1.5
+
+  augmentation:
+    horizontal_flip_prob: 0.5
+    rotation_degrees: 10
+    color_jitter:
+      brightness: 0.1
+      contrast: 0.1
+      saturation: 0.05
+      hue: 0.02
+    normalize:
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
+
+  early_stopping:
+    enabled: true
+    monitor: "val_defect_recall"
+    mode: "max"
+    patience: 7
+    min_delta: 0.001
+
+  use_amp: true
+
+mlflow:
+  enabled: true
+  experiment_name: "manufacturing-defect-inspection-512"
+  registered_model_name: "ManufacturingDefectResNet50-512"
+  log_models: true

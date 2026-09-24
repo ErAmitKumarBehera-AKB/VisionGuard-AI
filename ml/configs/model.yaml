@@ -1,0 +1,21 @@
+model:
+  name: "resnet50_defect_detector"
+  architecture: "resnet50"
+  pretrained: true
+  weights: "IMAGENET1K_V2"
+
+  classifier:
+    num_classes: 2
+    classes:
+      - "OK"
+      - "DEFECT"
+    dropout_rate: 0.3
+    hidden_dim: 256
+    use_batchnorm: true
+
+  fine_tuning:
+    freeze_backbone_initially: true
+    freeze_epochs: 2
+    unfreeze_layers:
+      - "layer4"
+      - "fc"

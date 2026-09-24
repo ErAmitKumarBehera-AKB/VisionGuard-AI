@@ -1,0 +1,33 @@
+# VCS and local tooling
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Python caches and environments
+__pycache__
+*.py[cod]
+.venv
+venv
+.env
+.env.*
+
+# Datasets, caches, reports, and local runtime state
+ml/data
+.dvc
+mlflow.db
+mlruns
+mlartifacts
+backend/app/storage/images
+backend/app/inspection.db
+qc/data
+frontend/node_modules
+frontend/**/node_modules
+frontend/**/dist
+
+# Large model artifacts are mounted read-only at runtime
+ml/artifacts/checkpoints/*
+!ml/artifacts/checkpoints/.gitkeep
+ml/artifacts/reports/*
+!ml/artifacts/reports/.gitkeep
