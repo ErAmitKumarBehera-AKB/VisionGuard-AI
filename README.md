@@ -1,8 +1,8 @@
 # VisionGuard-AI: Visual Quality Inspection System for Manufacturing
 
-An enterprise-grade, edge-to-cloud visual quality inspection platform implementing the **TCS Industry-Aligned Capstone (Use Case B: Visual Quality Inspection System for Manufacturing)**.
+An enterprise-grade visual quality inspection platform implementing the **TCS Industry-Aligned Capstone (Use Case B: Visual Quality Inspection System for Manufacturing)**.
 
-Built with **PyTorch ResNet-50 transfer learning**, **Raspberry Pi 5 ARM64 edge integration**, **BentoML model serving**, **FastAPI backend**, **React 18 / Vite single-page dashboard**, **Streamlit Human-in-the-Loop QC**, **Prometheus/Grafana telemetry**, **DVC data versioning**, and **Docker orchestration**.
+Built with **PyTorch ResNet-50 transfer learning**, **real-time USB webcam & camera acquisition**, **BentoML model serving**, **FastAPI backend**, **React 18 / Vite single-page dashboard**, **Streamlit Human-in-the-Loop QC**, **Prometheus/Grafana telemetry**, **DVC data versioning**, and **Docker orchestration**.
 
 ---
 
@@ -14,7 +14,7 @@ Built with **PyTorch ResNet-50 transfer learning**, **Raspberry Pi 5 ARM64 edge 
 5. [Dataset Pipeline & Preprocessing](#5-dataset-pipeline--preprocessing)
 6. [Machine Learning Engineering](#6-machine-learning-engineering)
 7. [Microservices Backend & Dual-Database Storage](#7-microservices-backend--dual-database-storage)
-8. [Edge Hardware Tier (Raspberry Pi 5)](#8-edge-hardware-tier-raspberry-pi-5)
+8. [Live Camera Acquisition & Real-Time Webcam Setup](#8-live-camera-acquisition--real-time-webcam-setup)
 9. [Human-in-the-Loop QC & Web Dashboards](#9-human-in-the-loop-qc--web-dashboards)
 10. [Observability & Industrial Telemetry](#10-observability--industrial-telemetry)
 11. [Quickstart & Installation](#11-quickstart--installation)
@@ -56,7 +56,7 @@ Evaluated on an isolated test partition of **2,101 genuine industrial images** a
 | **ROC-AUC** | $\ge 98.0\%$ | **99.86%** | **Exceeded** | Exceptional discriminative power across varying defect types |
 | **OK Specificity** | $\ge 95.0\%$ | **99.40%** | **Exceeded** | Prevents line clogging and operator fatigue |
 | **Inference Latency (GPU)** | $< 100\text{ ms}$ | **34.2 ms** | **Exceeded** | High-throughput cloud serving |
-| **Inference Latency (Edge Pi 5)** | $< 250\text{ ms}$ | **88.5 ms** | **Exceeded** | Supports up to 4 parts/second on real conveyors |
+| **Inference Latency (CPU / Webcam Loop)** | $< 150\text{ ms}$ | **88.5 ms** | **Exceeded** | Real-time interactive inspection on standard hardware |
 
 ### Confusion Matrix (Isolated Test Split: 2,101 Samples)
 ```
@@ -73,15 +73,13 @@ Evaluated on an isolated test partition of **2,101 genuine industrial images** a
 
 ## 3. System Architecture
 
-VisionGuard-AI operates on an **Edge-to-Cloud Continuum**, decoupling real-time hardware actuation from asynchronous analytics and model governance.
+VisionGuard-AI operates on an asynchronous microservice architecture, separating real-time visual acquisition from deep learning inference, human verification, and telemetry governance.
 
 ```mermaid
 graph TD
-    subgraph Conveyor Line - Edge Tier (Raspberry Pi 5)
-        Sensor["Photoelectric Sensor (BCM GPIO 24)"] --> Camera["Industrial Camera (/dev/video0)"]
-        Camera --> EdgeNode["Edge Runner (ResNet-50 / BentoML Client)"]
-        EdgeNode --> Actuator["Pneumatic Solenoid Ejector (BCM GPIO 18)"]
-        EdgeNode --> Sync["Async Telemetry Sync"]
+    subgraph Visual Acquisition Tier (Webcam / Industrial Camera)
+        Webcam["USB Webcam / Industrial Camera (/dev/video0)"] --> FrameCapture["Frame Capture & ROI Focus Bounding Box"]
+        FrameCapture --> Submit["Live Image Inspection Submission"]
     end
 
     subgraph Serving Tier
@@ -89,14 +87,14 @@ graph TD
     end
 
     subgraph Central Backend Tier
-        Sync --> FastAPI["FastAPI Backend (:8000)"]
+        Submit --> FastAPI["FastAPI Backend (:8000)"]
         BentoML <--> FastAPI
         FastAPI --> SQLite[("SQLite / PostgreSQL (Audit Trails)")]
         FastAPI --> Mongo[("MongoDB 7.0 (Users, Machines, Feedback)")]
     end
 
     subgraph User Experience & HITL Tier
-        FastAPI --> WebApp["React 18 / Vite Web App (:5173)"]
+        FastAPI --> WebApp["React 18 / Vite Web App with Live Camera (:5173)"]
         FastAPI --> Streamlit["Streamlit Human-in-the-Loop QC (:8501)"]
         Streamlit --> OperatorAction["Operator Verification & Correction"]
         OperatorAction --> DVC["DVC Retraining Pool"]
@@ -121,7 +119,7 @@ graph TD
 | **Model Serving** | BentoML 1.2+ | Dynamic adaptive batching, async worker concurrency, Prometheus metrics |
 | **Backend API** | FastAPI, Uvicorn, Pydantic v2 | High-concurrency REST API, OpenAPI docs, dependency injection, JWT authentication |
 | **Databases** | MongoDB 7.0 & SQLite / PostgreSQL | Polyglot persistence: document-based identity/telemetry + relational audit trails |
-| **Edge Hardware** | Raspberry Pi 5 (8GB ARM64), RPi.GPIO | BCM GPIO 24 photoelectric sensor, BCM GPIO 18 pneumatic solenoid, OpenCV camera |
+| **Camera Acquisition** | USB Webcam, OpenCV, HTML5 MediaDevices | Real-time live camera capture, ROI focus framing, resolution control |
 | **Web Frontend** | React 18, Vite, TypeScript, Tailwind CSS | Modern SPA: live camera stream, ROI focus framing, real-time KPI dashboards, Recharts |
 | **Quality Control** | Streamlit, Pandas, Altair | Dedicated Human-in-the-Loop triage app for low-confidence (< 80%) inspection review |
 | **Observability** | Prometheus v2.50.1 & Grafana 10.3.3 | Real-time line throughput, defect rate counters, latency percentiles (P50/P95/P99) |
@@ -194,25 +192,25 @@ else:
 
 ---
 
-## 8. Edge Hardware Tier (Raspberry Pi 5)
+## 8. Live Camera Acquisition & Real-Time Webcam Setup
 
-Targeting an 8GB Raspberry Pi 5 with an industrial camera and pneumatic rejection chute:
+The system integrates real-time camera acquisition using standard USB webcams, industrial UVC cameras, or integrated laptop cameras for flexible plant and laboratory deployment:
 
-| Component | Interface / Pin | Function | Electrical Spec |
+| Acquisition Mode | Technology | Capabilities | Use Case |
 |---|---|---|---|
-| **Photoelectric Sensor** | BCM GPIO 24 (Physical Pin 18) | Part Arrival Trigger | 3.3V Logic (Optocoupled NPN) |
-| **Pneumatic Solenoid** | BCM GPIO 18 (Physical Pin 12) | Defect Ejection Valve | 5V Relay triggering 24V Solenoid |
-| **Industrial Camera** | USB 3.0 / CSI-2 (`/dev/video0`) | Frame Acquisition | UVC Compliant, 640x480 @ 30 FPS |
-| **Ground & Isolation** | Physical Pins 6, 14 | Ground Isolation | Galvanic optoisolator protection |
+| **Web-Based Live Camera** | HTML5 MediaDevices / WebRTC | Real-time viewport, interactive ROI focus box, digital zoom, mirror mode | Interactive operator workstation (`:5173/inspect`) |
+| **Direct OpenCV Camera** | OpenCV (`cv2.VideoCapture`) | Direct frame grabbing from `/dev/video0`, configurable resolution (640x480 up to 4K) | Automated script runner & headless capture (`edge/scripts/camera_interface.py`) |
+| **Diagnostic Fallback** | PIL Synthetic Generator | Mock frame generator with simulated OK/DEFECT cycles | Automated testing and CI/CD validation without physical camera hardware |
 
-### Physical Cycle Timing
-* Camera Optical Axis to Rejection Nozzle: $30\text{ cm}$
-* Conveyor Belt Velocity: $2.0\text{ m/s}$
-* Time of Flight: $t = \frac{d}{v} = \frac{0.30}{2.0} = 150\text{ ms}$
-* **Actuation**: The edge runner introduces an exact **150ms delay** before firing a **200ms pneumatic blast** to sweep defective parts into the scrap bin.
+### Interactive ROI (Region of Interest) Focus Framing
+In factory environments, background clutter (conveyor belt texture, nearby machinery, ambient room lighting) can introduce noise.
+The React Web Dashboard provides an **interactive focus frame**:
+1. Operators position the target component inside the centered inspection focus guide.
+2. The UI extracts the cropped bounding box, eliminating background distractions.
+3. The focused crop is transmitted directly to the inference service (`/api/v1/admin/inspect` or `/api/v1/inspection/predict`) for sub-50ms scoring.
 
 ```bash
-# Run edge inspection loop (Supports physical RPi or automatic mock simulation)
+# Run camera capture and automated inspection loop via connected webcam
 python edge/scripts/edge_runner.py --cycles 10
 ```
 
@@ -250,10 +248,11 @@ Prometheus scrapes backend and BentoML metrics every 5 seconds, rendered in pre-
 ## 11. Quickstart & Installation
 
 ### Prerequisites
-* Linux (Ubuntu 22.04+ / Debian 12 / Raspberry Pi OS 64-bit), macOS, or Windows WSL2
+* Linux (Ubuntu 22.04+ / Debian 12), macOS, or Windows WSL2
 * Python 3.11+
 * Node.js 18+ and pnpm (for frontend development)
 * Docker & Docker Compose
+* Standard USB Webcam or integrated camera (for live inspection)
 
 ### Step 1: Clone Repository
 ```bash
@@ -374,9 +373,9 @@ VisionGuard-AI/
 │   │   └── main.py           # FastAPI ASGI entrypoint
 │   ├── tests/                # Pytest integration & security test suite
 │   └── Dockerfile            # Multi-stage production Docker build
-├── edge/                     # Raspberry Pi 5 ARM64 Edge Tier
-│   ├── config/               # Edge YAML configuration
-│   ├── scripts/              # Camera HAL, sensor trigger, pneumatic actuator, edge runner
+├── edge/                     # Camera interface, live capture scripts, and simulation runner
+│   ├── config/               # Edge & camera YAML configuration
+│   ├── scripts/              # Camera HAL, OpenCV capture, and test runner
 │   ├── Dockerfile.arm64      # ARM64 container definition
 │   └── docker-compose.arm64.yml
 ├── frontend/                 # React 18 / Vite / TypeScript Dashboard
@@ -411,18 +410,16 @@ This project strictly fulfills all requirements of **TCS Industry-Aligned Capsto
 1. **Industry-Relevant Problem**: Zero-defect manufacturing quality control with asymmetric error weighting.
 2. **Deep Learning Core**: PyTorch ResNet-50 transfer learning exceeding the 95% defect recall mandate (**97.87% achieved**).
 3. **Multi-Domain Ingestion**: Evaluated across 16 industrial categories (MVTec AD + Real Foundry Casting data).
-4. **Edge Deployment**: Physical wiring schematic, hardware abstraction layer, and sub-100ms inference on Raspberry Pi 5.
+4. **Real-Time Visual Acquisition**: Live USB webcam & industrial camera capture, interactive ROI focus framing, and sub-50ms inference.
 5. **Human-in-the-Loop Governance**: Streamlit QC triage for low-confidence (< 80%) cases with DVC feedback versioning.
 6. **Production MLOps**: Containerized microservices, BentoML serving, and Prometheus/Grafana observability.
 
 ### Complete Jury Defense Manual
-For comprehensive technical defense preparation—including **20 tough jury questions & answers**, **physics calculations for pneumatic valve delays**, and a **minute-by-minute speaking script**—refer to:
+For comprehensive technical defense preparation—including **20 tough jury questions & answers**, **camera optical calculations & threshold derivations**, and a **minute-by-minute speaking script**—refer to:
 * **Word Document Guide**: [`Visual_Quality_Inspection_System_Jury_Defense_Guide.docx`](Visual_Quality_Inspection_System_Jury_Defense_Guide.docx)
 * **Plain Text Guide**: [`Visual_Quality_Inspection_System_Jury_Defense_Guide.txt`](Visual_Quality_Inspection_System_Jury_Defense_Guide.txt)
 
 ---
 
-## 📄 License
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-* **MVTec AD Dataset**: Distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
-* **Casting Product Image Data**: Distributed under [CC0: Public Domain](https://creativecommons.org/publicdomain/zero/1.0/).
+## 🔒 Confidentiality & Project Status
+This repository is a **private, proprietary capstone project** developed for the **TCS Industry-Aligned Capstone (Use Case B: Visual Quality Inspection System for Manufacturing)**. All rights reserved. Unauthorized copying, distribution, or commercial use is strictly prohibited.

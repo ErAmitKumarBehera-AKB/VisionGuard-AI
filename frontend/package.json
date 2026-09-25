@@ -1,7 +1,7 @@
 {
   "name": "workspace",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "workspaces": [
     "artifacts/visioninspect-ai",
     "lib/api-client-react"
