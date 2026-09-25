@@ -10,7 +10,7 @@
 
 An enterprise-grade, industry-aligned visual quality inspection platform implementing **TCS Industry-Aligned Capstone (Use Case B: Visual Quality Inspection System for Manufacturing)**.
 
-Built with **PyTorch ResNet-50 transfer learning**, **DVC dataset versioning**, **MLflow tracking and model registry**, **BentoML model serving**, **FastAPI backend**, **Streamlit Human-in-the-Loop Quality Control**, **Prometheus/Grafana observability**, **Raspberry Pi 5 ARM64 edge integration**, and **Docker orchestration**.
+Built with **PyTorch ResNet-50 transfer learning**, **DVC dataset versioning**, **MLflow tracking and model registry**, **BentoML model serving**, **FastAPI backend**, **Streamlit Human-in-the-Loop Quality Control**, **Prometheus/Grafana observability**, **Local PC x86_64 edge integration**, and **Docker orchestration**.
 
 ---
 
@@ -21,38 +21,58 @@ In modern manufacturing (automotive, electronics, precision engineering), shippi
 This project delivers:
 1. **Zero-Defect Quality Priority**: A deep transfer learning vision pipeline tuned to prioritize **DEFECT Recall (>= 95%)** using weighted loss and threshold optimization.
 2. **Domain-Aware Generalization**: Ingests and validates multi-domain industrial datasets (**MVTec AD** and **Casting Product Image Data**) to ensure models do not merely memorize background textures.
-3. **Edge-to-Cloud Continuum**: Deployable on **Raspberry Pi 5** for real-time line inference, paired with a central microservice architecture for auditing and human-in-the-loop validation.
+3. **Edge-to-Core Continuum**: Deployable on **Local PC** for real-time line inference, paired with a central microservice architecture for auditing and human-in-the-loop validation.
 4. **Continuous Feedback Retraining Loop**: Captures operator corrections, versions datasets with DVC, and triggers governed retraining pipelines.
 
 ---
 
 ## 2. System Architecture
 
-```
-Conveyor Line (Edge)
-  ├── Photoelectric Sensor Trigger (GPIO 24)
-  ├── Industrial Camera (/dev/video0)
-  ├── Edge Runner (Embedded ResNet-50 / BentoML Client)
-  └── Pneumatic Rejection Actuator (GPIO 18)
-          │
-          ▼ [Async Telemetry]
-Central Platform
-  ├── BentoML Model Serving (:3000)
-  ├── FastAPI Backend (:8000)
-  ├── SQLite / PostgreSQL Audit Database
-  ├── Prometheus (:9090) & Grafana (:3001)
-  ├── Streamlit Human-in-the-Loop QC (:8501)
-  └── [Future Replit Frontend] (frontend/)
+```mermaid
+flowchart TD
+    subgraph Edge["Conveyor Line (Edge Node)"]
+        direction TB
+        S["Photoelectric Sensor Trigger (GPIO 24)"]
+        C["Webcam"]
+        R["Edge Runner (ResNet-50 / BentoML Client)"]
+        A["Pneumatic Rejection Actuator (GPIO 18)"]
+        
+        S --> R
+        C --> R
+        R --> A
+    end
+
+    subgraph Cloud["Central Platform (Local Docker / On-Premise)"]
+        direction TB
+        B["BentoML Model Serving (:3000)"]
+        F["FastAPI Backend (:8000)"]
+        DB[("Audit Database (SQLite/PostgreSQL)")]
+        QC["Streamlit QC Interface (:8501)"]
+        UI["React Frontend Dashboard (:5173)"]
+        M["Prometheus & Grafana (:9090 / :3001)"]
+        
+        F <--> B
+        F --> DB
+        QC <--> F
+        UI <--> F
+        B -.-> M
+        F -.-> M
+    end
+
+    R -- "Async Telemetry / API Requests" --> F
 ```
 
 ---
 
 ## 3. Dataset Setup & Exact Placement
 
-The system ingests two public industrial quality inspection datasets:
+Because the datasets total over 6GB, they are not stored on GitHub. Your teammates must manually download them from their sources (like Kaggle) and extract them into the correct folders before running the system.
 
 ### A. MVTec Anomaly Detection (MVTec AD)
-- **Source**: [MVTec AD Dataset Portal](https://www.mvtec.com/company/research/datasets/mvtec-ad)
+**Step 1:** Download the dataset from the [MVTec AD Dataset Portal](https://www.mvtec.com/company/research/datasets/mvtec-ad).
+**Step 2:** Extract the downloaded ZIP file.
+**Step 3:** Move the extracted category folders (`cable`, `screw`, `metal_nut`, `transistor`) exactly into the `ml/data/raw/mvtec/` directory.
+
 - **Target Categories**: `cable`, `screw`, `metal_nut`, `transistor`
 - **Expected Directory Structure**:
   ```
@@ -72,7 +92,10 @@ The system ingests two public industrial quality inspection datasets:
   ```
 
 ### B. Casting Product Image Data for Quality Inspection
-- **Source**: [Kaggle - Casting Product Image Data](https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product)
+**Step 1:** Download the dataset from [Kaggle - Casting Product Image Data](https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product).
+**Step 2:** Extract the downloaded ZIP file (specifically the `casting_data/casting_data/` folder).
+**Step 3:** Move the `ok_front` and `def_front` folders exactly into the `ml/data/raw/casting/` directory.
+
 - **Expected Directory Structure**:
   ```
   ml/data/raw/casting/
@@ -93,7 +116,7 @@ The system ingests two public industrial quality inspection datasets:
 ## 5. Environment Setup
 
 ### Prerequisites
-- Linux / macOS (ARM64 or x86_64) or Windows WSL2
+- Linux / macOS (x86_64 or x86_64) or Windows WSL2
 - Python 3.11+
 - [uv](https://github.com/astral-sh/uv) (recommended) or standard pip
 - Docker & Docker Compose (optional, for containerized run)
@@ -275,52 +298,36 @@ docker compose down
 
 ---
 
-## 16. Edge Deployment (Raspberry Pi 5)
+## 16. Edge Deployment (Local PC)
 
-Targeting an 8GB Raspberry Pi 5 with hardware sensor stubs:
+Targeting an 8GB Local PC with hardware sensor stubs:
 
 ```bash
 # Run edge runner in development mode
 python edge/scripts/edge_runner.py --cycles 10
 
-# Or build and launch ARM64 container on Raspberry Pi:
-docker compose -f edge/docker-compose.arm64.yml up -d --build
+# Or build and launch x86_64 container on Local PC:
+docker compose -f edge/docker-compose.edge.yml up -d --build
 ```
 
 ---
 
 ## 17. Human-in-the-Loop & Continuous Retraining Workflow
 
-```
-1. Conveyor / Client Image Inspection
-               │
-               ▼
-2. Prediction: DEFECT or OK (with Confidence Score)
-               │
-               ▼
-3. Is Confidence < 80% or Operator Flagged?
-       ├── YES ──► Route to Streamlit QC App (:8501)
-       │                 │
-       │                 ▼
-       │           Human Operator Corrects / Confirms Label
-       │                 │
-       │                 ▼
-       │           Appended to Retraining Feedback Pool
-       │                 │
-       │                 ▼
-       │           DVC Dataset Version Increment (dvc commit)
-       │                 │
-       │                 ▼
-       │           Trigger Retraining (scripts/train.sh)
-       │                 │
-       │                 ▼
-       │           Model Evaluation & Safety Gate (Recall >= 95%)
-       │                 │
-       │                 ▼
-       │           MLflow Model Registry Promotion
-       │                 │
-       │                 ▼
-       └── NO  ──► Automated Actuator Decision & Line Output
+```mermaid
+flowchart TD
+    A["1. Conveyor / Client Image Inspection"] --> B["2. Prediction: DEFECT or OK (with Confidence Score)"]
+    B --> C{"3. Confidence < 80% or Operator Flagged?"}
+    
+    C -- "YES" --> D["Route to Streamlit QC App (:8501)"]
+    D --> E["Human Operator Corrects / Confirms Label"]
+    E --> F["Appended to Retraining Feedback Pool"]
+    F --> G["DVC Dataset Version Increment (dvc commit)"]
+    G --> H["Trigger Retraining (scripts/train.sh)"]
+    H --> I["Model Evaluation & Safety Gate (Recall >= 95%)"]
+    I --> J["MLflow Model Registry Promotion"]
+    
+    C -- "NO" --> K["Automated Actuator Decision & Line Output"]
 ```
 
 ---
