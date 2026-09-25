@@ -76,7 +76,7 @@ Because the datasets total over 6GB, they are not stored on GitHub. Your teammat
 - **Target Categories**: `cable`, `screw`, `metal_nut`, `transistor`
 - **Expected Directory Structure**:
   ```
-  ml/data/raw/mvtec/
+  training/data/raw/mvtec/
   ├── cable/
   │   ├── train/good/*.png
   │   └── test/{good, bent_wire, cable_swap, cut_inner_insulation, ...}/*.png
@@ -98,7 +98,7 @@ Because the datasets total over 6GB, they are not stored on GitHub. Your teammat
 
 - **Expected Directory Structure**:
   ```
-  ml/data/raw/casting/
+  training/data/raw/casting/
   ├── ok_front/*.jpeg
   └── def_front/*.jpeg
   ```
@@ -147,11 +147,11 @@ The ingestion pipeline scans the raw dataset directories, validates file integri
 
 ```bash
 # Execute dataset preparation
-python ml/scripts/prepare_dataset.py --config ml/configs/dataset.yaml
+python training/scripts/prepare_dataset.py --config training/configs/dataset.yaml
 
 # Generated Outputs:
-#   ml/data/manifests/unified_manifest.csv
-#   ml/data/manifests/unified_manifest.parquet
+#   training/data/manifests/unified_manifest.csv
+#   training/data/manifests/unified_manifest.parquet
 ```
 
 ---
@@ -182,7 +182,7 @@ Fine-tunes **ResNet-50** with weighted loss, Cosine Annealing scheduler, and aut
 
 ```bash
 # Run training with default configurations
-python ml/scripts/train.py --config ml/configs/training.yaml
+python training/scripts/train.py --config training/configs/training.yaml
 
 # Or using the convenience script:
 bash scripts/train.sh --epochs 15 --batch-size 32 --lr 0.0001
@@ -197,11 +197,11 @@ Checkpoints and training metadata are saved to `ml/artifacts/checkpoints/best_mo
 Evaluates performance on the isolated test partition across overall, per-domain, and per-product slices:
 
 ```bash
-python ml/scripts/evaluate.py --checkpoint ml/artifacts/checkpoints/best_model.pt
+python training/scripts/evaluate.py --checkpoint training/artifacts/checkpoints/best_model.pt
 
 # Reports generated:
-#   ml/artifacts/reports/evaluation_metrics.json
-#   ml/artifacts/reports/confusion_matrix.png
+#   training/artifacts/reports/evaluation_metrics.json
+#   training/artifacts/reports/confusion_matrix.png
 ```
 
 ---
@@ -228,7 +228,7 @@ Serve the trained model with high-throughput batching and Prometheus metrics:
 
 ```bash
 # Serve model on port 3000
-bentoml serve serving/service.py:svc --port 3000
+bentoml serve inference/service.py:svc --port 3000
 ```
 
 Test inference:
@@ -258,7 +258,7 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 Launch the operator dashboard:
 
 ```bash
-streamlit run qc/app.py --server.port 8501
+streamlit run feedback/app.py --server.port 8501
 ```
 Open `http://localhost:8501` to:
 - Review live inspections and triage low-confidence parts (`< 80%`).
@@ -357,5 +357,5 @@ The FastAPI backend has CORS enabled (`allow_origins=["*"]`) and provides the fo
 
 ```bash
 # Run all unit and integration tests across ML and Backend
-pytest ml/tests backend/tests -v
+pytest training/tests backend/tests -v
 ```
