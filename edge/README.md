@@ -1,6 +1,6 @@
-# Edge Deployment Subsystem - Raspberry Pi 5 (ARM64)
+# Edge Deployment Subsystem - Local PC (x86_64)
 
-Hosts the edge visual inspection pipeline optimized for an ARM64-powered **Raspberry Pi 5 (8GB)**.
+Hosts the edge visual inspection pipeline optimized for an x86_64-powered **Local PC (8GB)**.
 
 ---
 
@@ -33,12 +33,12 @@ Decision:
 
 ---
 
-## Running on Raspberry Pi 5
+## Running on Local PC
 
 ```bash
 # Standalone run:
 python edge/scripts/edge_runner.py --cycles 10
 
-# Or via Docker ARM64 container:
-docker compose -f edge/docker-compose.arm64.yml up --build -d
+# Or via Docker x86_64 container:
+docker compose -f edge/docker-compose.edge.yml up --build -d
 ```
