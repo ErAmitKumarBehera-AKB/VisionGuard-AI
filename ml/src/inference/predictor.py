@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 
 class DefectPredictor:
 
-    DEFAULT_IMAGE_SIZE = 224
+    DEFAULT_IMAGE_SIZE = 384
     CLASSES = ["OK", "DEFECT"]
 
     def __init__(
@@ -26,7 +26,7 @@ class DefectPredictor:
         device: str = "auto",
         model_version: str = "v1.0.0",
         defect_threshold: float = 0.50,
-        image_size: int = 224,
+        image_size: int = 384,
     ) -> None:
         self.device = get_device(device)
         self.model_version = model_version

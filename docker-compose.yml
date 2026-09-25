@@ -35,8 +35,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - MODEL_CHECKPOINT_PATH=/app/ml/artifacts/checkpoints/best_model.pt
+      - MODEL_CHECKPOINT_PATH=/app/ml/artifacts/checkpoints/best_model_384.pt
       - DEFECT_THRESHOLD=0.50
+      - MODEL_IMAGE_SIZE=384
       - DEVICE=${MODEL_DEVICE:-cpu}
       - OMP_NUM_THREADS=${MODEL_THREADS:-1}
       - MKL_NUM_THREADS=${MODEL_THREADS:-1}
@@ -70,8 +71,6 @@ services:
       - ALLOW_IN_PROCESS_FALLBACK=false
       - BOOTSTRAP_ADMIN_EMAIL=${BOOTSTRAP_ADMIN_EMAIL:-}
       - BOOTSTRAP_ADMIN_PASSWORD=${BOOTSTRAP_ADMIN_PASSWORD:-}
-      - BOOTSTRAP_SUPERVISOR_EMAIL=${BOOTSTRAP_SUPERVISOR_EMAIL:-}
-      - BOOTSTRAP_SUPERVISOR_PASSWORD=${BOOTSTRAP_SUPERVISOR_PASSWORD:-}
       - ENVIRONMENT=production
     volumes:
       - sqlite_data:/app/data
@@ -127,7 +126,6 @@ services:
       start_period: 15s
       retries: 3
     volumes:
-      - ./qc:/app/qc
       - ./backend/app/storage:/app/backend/app/storage:ro
     networks:
       - inspection-net

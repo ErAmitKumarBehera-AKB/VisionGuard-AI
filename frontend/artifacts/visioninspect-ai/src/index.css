@@ -96,6 +96,12 @@
   .animate-pulse-soft { animation: pulse-soft 2.4s ease-in-out infinite; }
   .status-dot { width: 7px; height: 7px; border-radius: 999px; display: inline-block; }
   .scrollbar-thin { scrollbar-width: thin; scrollbar-color: hsl(var(--border)) transparent; }
+  form div[class~="border-accent/30"][class~="bg-accent/10"] { display: none; }
+  div[class~="bg-secondary"][class~="text-secondary-foreground"][class~="md:col-span-2"] { background: hsl(var(--card)); color: hsl(var(--foreground)); }
+  div[class~="bg-secondary"][class~="text-secondary-foreground"][class~="md:col-span-2"] p { color: hsl(var(--muted-foreground)); }
+  div[class~="mb-5"][class~="panel"][class~="flex-wrap"][class~="justify-between"][class~="gap-4"] { display: none; }
+  header small.font-mono-ui { font-size: 0; }
+  header small.font-mono-ui::after { content: 'USER'; font-size: 9px; }
 }
 
 @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }

@@ -38,7 +38,7 @@ SERVING_PREDICTION_LATENCY = Histogram(
 class DefectInspectionService:
 
     def __init__(self) -> None:
-        checkpoint_path = os.getenv("MODEL_CHECKPOINT_PATH", "ml/artifacts/checkpoints/best_model.pt")
+        checkpoint_path = os.getenv("MODEL_CHECKPOINT_PATH", "ml/artifacts/checkpoints/best_model_384.pt")
         cp = checkpoint_path if Path(checkpoint_path).is_file() else None
 
         if cp:
@@ -54,6 +54,7 @@ class DefectInspectionService:
             device=os.getenv("DEVICE", "auto"),
             model_version=os.getenv("MODEL_VERSION", "v1.0.0"),
             defect_threshold=float(os.getenv("DEFECT_THRESHOLD", "0.50")),
+            image_size=int(os.getenv("MODEL_IMAGE_SIZE", "384")),
         )
         self.model_version = self.predictor.model_version
 

@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     BENTOML_TIMEOUT_SECONDS: float = 5.0
     ALLOW_IN_PROCESS_FALLBACK: bool = False
 
-    MODEL_CHECKPOINT_PATH: str = "ml/artifacts/checkpoints/best_model.pt"
+    MODEL_CHECKPOINT_PATH: str = "ml/artifacts/checkpoints/best_model_384.pt"
 
     DATABASE_URL: str = "sqlite:///./backend/app/inspection.db"
 
@@ -31,14 +31,12 @@ class Settings(BaseSettings):
     IMAGE_STORAGE_PATH: str = "backend/app/storage/images"
     MONGO_URI: str = "mongodb://localhost:27017"
     MONGO_DB: str = "visioninspect"
-    JWT_SECRET: str = ""
+    JWT_SECRET: str = "visioninspect-dev-secret-change-me"
     JWT_EXPIRE_MINUTES: int = 60
     ADMIN_EMAIL: str = ""
     ADMIN_PASSWORD: str = ""
     BOOTSTRAP_ADMIN_EMAIL: str = ""
     BOOTSTRAP_ADMIN_PASSWORD: str = ""
-    BOOTSTRAP_SUPERVISOR_EMAIL: str = ""
-    BOOTSTRAP_SUPERVISOR_PASSWORD: str = ""
 
     @property
     def image_storage_dir(self) -> Path:

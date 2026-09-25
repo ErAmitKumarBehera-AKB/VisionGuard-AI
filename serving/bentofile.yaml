@@ -8,7 +8,7 @@ include:
   - "service.py"
   - "ml/src/"
   - "ml/configs/"
-  - "ml/artifacts/checkpoints/best_model.pt"
+  - "ml/artifacts/checkpoints/best_model_384.pt"
 
 python:
   requirements_txt: "./requirements.txt"

@@ -19,6 +19,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 ARG APP_REV=20260924
 RUN echo "backend revision ${APP_REV}"
 COPY backend /app/backend
+COPY qc /app/qc
 
 EXPOSE 8000
 

@@ -3,6 +3,8 @@ from PIL import Image
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.app.auth.security import token_for
+from backend.app.config import settings
 from backend.app.main import app
 from backend.app.utils.database import init_db
 
@@ -110,3 +112,14 @@ def test_feedback_export(client: TestClient):
     data = response.json()
     assert "total_records" in data
     assert "items" in data
+
+
+def test_token_generation_uses_fallback_secret_when_unset():
+    original_secret = settings.JWT_SECRET
+    settings.JWT_SECRET = ""
+    try:
+        token = token_for({"_id": "test-user", "role": "ADMIN", "machine_id": None})
+        assert token
+        assert isinstance(token, str)
+    finally:
+        settings.JWT_SECRET = original_secret

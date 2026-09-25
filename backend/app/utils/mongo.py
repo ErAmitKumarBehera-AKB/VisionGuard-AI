@@ -33,9 +33,7 @@ def _seed_configured_accounts(database):
     )
     admin_email = settings.ADMIN_EMAIL or settings.BOOTSTRAP_ADMIN_EMAIL
     admin_password = settings.ADMIN_PASSWORD or settings.BOOTSTRAP_ADMIN_PASSWORD
-    accounts = [(admin_email, admin_password, "Platform Administrator", "ADMIN", None, "admin-001")]
-    if settings.ENVIRONMENT == "development":
-        accounts.append((settings.BOOTSTRAP_SUPERVISOR_EMAIL, settings.BOOTSTRAP_SUPERVISOR_PASSWORD, "Quality Operator", "SUPERVISOR", machine_id, "operator-001"))
+    accounts = [(admin_email, admin_password, "Workspace User", "USER", None, "user-001")]
     for email, password, name, role, assigned_machine, employee_id in accounts:
         if not email or not password:
             continue

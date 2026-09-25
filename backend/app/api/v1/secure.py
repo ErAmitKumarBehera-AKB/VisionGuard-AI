@@ -4,9 +4,10 @@ from pathlib import Path
 import subprocess, uuid
 from io import BytesIO
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
 from pymongo.errors import DuplicateKeyError
-from ...auth.security import current_user, hash_password, require_admin, require_supervisor, token_for, verify_password
+from ...auth.security import current_user, hash_password, require_admin, token_for, verify_password
 from ...config import settings
 from ...services.bentoml_client import BentoMLClient
 from ...services.decision_service import decide
@@ -19,6 +20,8 @@ ALLOWED={"image/jpeg":".jpg","image/png":".png","image/webp":".webp"}
 def clean(doc):
     if not doc: return None
     doc=dict(doc); doc.pop("_id",None)
+    if doc.get("inspection_id") and doc.get("image_reference"):
+        doc["image_url"] = f"/api/v1/inspection-evidence/{doc['inspection_id']}"
     for k,v in doc.items():
         if isinstance(v,datetime): doc[k]=v.isoformat()
     return doc
@@ -31,24 +34,25 @@ def ensure_mongo():
 
 def inspection_id(): return f"INS-{utcnow().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
 
-def user_view(u):
-    return {k:v for k,v in clean(u).items() if k not in {"password_hash"}}
 
-@router.post("/auth/register", status_code=201, summary="Create the initial administrator account")
-def register_admin(payload:dict):
+def user_view(u):
+    view = {k:v for k,v in clean(u).items() if k not in {"password_hash"}}
+    view["role"] = "USER"
+    return view
+
+@router.post("/auth/register", status_code=201, summary="Create a workspace user account")
+def register_user(payload:dict):
     ensure_mongo()
-    if db().users.count_documents({"role":"ADMIN"}, limit=1):
-        raise HTTPException(403, "Administrator registration is closed. Ask an existing administrator to create accounts.")
     email=str(payload.get("email", "")).strip().lower()
     password=str(payload.get("password", ""))
     full_name=str(payload.get("full_name", "")).strip()
     employee_id=str(payload.get("employee_id", "")).strip()
     if not full_name or not employee_id: raise HTTPException(422, "Full name and employee ID are required.")
     if not email or "@" not in email: raise HTTPException(422, "A valid email address is required.")
-    doc={"_id":uuid.uuid4().hex,"full_name":full_name,"email":email,"employee_id":employee_id,"password_hash":hash_password(password),"role":"ADMIN","machine_id":None,"is_active":True,"created_at":utcnow(),"updated_at":utcnow()}
+    doc={"_id":uuid.uuid4().hex,"full_name":full_name,"email":email,"employee_id":employee_id,"password_hash":hash_password(password),"role":"USER","machine_id":None,"is_active":True,"created_at":utcnow(),"updated_at":utcnow()}
     try: db().users.insert_one(doc)
     except DuplicateKeyError: raise HTTPException(409, "An account with this email or employee ID already exists.")
-    audit(doc,"ADMIN_CREATED",doc["_id"])
+    audit(doc,"USER_CREATED",doc["_id"])
     return user_view(doc)
 
 @router.post("/auth/login", summary="Login using an administrator-created account")
@@ -60,10 +64,10 @@ def login(payload:dict):
     return {"access_token":token_for(user),"token_type":"bearer","user":user_view(user)}
 
 @router.get("/auth/me")
-def me(user=Depends(current_user)): return user_view(user)
+def me(user=Depends(require_admin)): return user_view(user)
 
 @router.put("/auth/me/password")
-def change_password(payload:dict, user=Depends(current_user)):
+def change_password(payload:dict, user=Depends(require_admin)):
     current=str(payload.get("current_password", ""))
     new=str(payload.get("new_password", ""))
     if not verify_password(current, user.get("password_hash", "")):
@@ -74,7 +78,7 @@ def change_password(payload:dict, user=Depends(current_user)):
     return {"status":"password_changed"}
 
 @router.put("/auth/me")
-def update_me(payload:dict, user=Depends(current_user)):
+def update_me(payload:dict, user=Depends(require_admin)):
     allowed = {key: str(payload[key]).strip() for key in ("full_name", "organization", "job_title", "employee_id", "plant_name") if key in payload}
     if any(not value for value in allowed.values()):
         raise HTTPException(422, "Profile fields cannot be empty.")
@@ -87,67 +91,39 @@ def update_me(payload:dict, user=Depends(current_user)):
 
 @router.get("/admin/dashboard")
 def admin_dashboard(admin=Depends(require_admin)):
-    ensure_mongo(); d=db(); total=d.inspections.count_documents({}); defects=d.inspections.count_documents({"final_label":"DEFECT"}); pending=d.inspections.count_documents({"review_required":True,"review_completed":False})
+    ensure_mongo(); d=db(); total=d.inspections.count_documents({"registered":True}); defects=d.inspections.count_documents({"registered":True,"final_label":"DEFECT"}); pending=d.inspections.count_documents({"prediction":"DEFECT","review_required":True,"review_completed":False})
     current_model=d.model_versions.find_one({"status":"PRODUCTION"},{"_id":0})
     checkpoint=Path(settings.MODEL_CHECKPOINT_PATH)
     if not current_model and checkpoint.is_file(): current_model={"model_name":"ResNet-50 Defect Detector","model_version":"checkpoint-"+checkpoint.stem,"architecture":"resnet50","status":"AVAILABLE","deployment_status":"LOCAL_CHECKPOINT"}
-    return {"total_inspections":total,"total_ok":d.inspections.count_documents({"final_label":"OK"}),"total_defect":defects,"defect_rate":round(defects/total*100,2) if total else 0,"pending_human_reviews":pending,"active_users":d.users.count_documents({"is_active":True}),"roles":len(d.users.distinct("role")),"audit_events":d.audit_logs.count_documents({}),"policy_alerts":0,"supervisors":d.users.count_documents({"role":"SUPERVISOR","is_active":True}),"active_machines":d.machines.count_documents({"status":"ACTIVE"}),"current_model":current_model}
-
-@router.get("/admin/team")
-def team(admin=Depends(require_admin)):
-    ensure_mongo(); return [user_view(x) for x in db().users.find({"role":"SUPERVISOR"}).sort("created_at",-1)]
+    return {"machine":clean(d.machines.find_one({"status":"ACTIVE"}, sort=[("machine_code",1)])),"total_inspections":total,"total_ok":d.inspections.count_documents({"registered":True,"final_label":"OK"}),"total_defect":defects,"defect_rate":round(defects/total*100,2) if total else 0,"pending_human_reviews":pending,"active_users":d.users.count_documents({"is_active":True}),"roles":1,"audit_events":d.audit_logs.count_documents({}),"policy_alerts":0,"administrators":d.users.count_documents({"role":"ADMIN","is_active":True}),"active_machines":d.machines.count_documents({"status":"ACTIVE"}),"current_model":current_model}
 
 @router.get("/admin/inspections")
-def all_inspections(machine_id:str|None=None, admin=Depends(require_admin)):
-    ensure_mongo(); q={"machine_id":machine_id} if machine_id else {}; return [clean(x) for x in db().inspections.find(q).sort("timestamp",-1).limit(500)]
+def all_inspections(machine_id: str | None = None, admin=Depends(require_admin)):
+    ensure_mongo()
+    query = {"prediction": "DEFECT"}
+    if machine_id:
+        query["machine_id"] = machine_id
+    return [clean(item) for item in db().inspections.find(query).sort("timestamp", -1).limit(500)]
 
 @router.get("/admin/inspections/{inspection_id}")
-def admin_inspection(inspection_id:str, admin=Depends(require_admin)):
-    ensure_mongo(); record=db().inspections.find_one({"inspection_id": inspection_id})
-    if not record: raise HTTPException(404, "Inspection not found.")
+def admin_inspection(inspection_id: str, admin=Depends(require_admin)):
+    ensure_mongo()
+    record = db().inspections.find_one({"inspection_id": inspection_id})
+    if not record:
+        raise HTTPException(404, "Inspection not found.")
     return clean(record)
 
-@router.get("/admin/team/supervisors")
-def supervisors(admin=Depends(require_admin)):
-    ensure_mongo(); return [user_view(x) for x in db().users.find({"role":"SUPERVISOR"}).sort("created_at",-1)]
-
-@router.post("/admin/team/supervisors",status_code=201)
-def create_supervisor(payload:dict,admin=Depends(require_admin)):
-    ensure_mongo(); required=["full_name","email","employee_id","password"]
-    if any(not str(payload.get(k,"")).strip() for k in required): raise HTTPException(422,"Full name, email, employee ID, and password are required.")
-    machine_id=payload.get("machine_id")
-    if machine_id and not db().machines.find_one({"machine_id":machine_id, "status":"ACTIVE"}): raise HTTPException(422,"Assigned machine must be active.")
-    doc={"_id":uuid.uuid4().hex,"full_name":payload["full_name"].strip(),"email":payload["email"].strip().lower(),"employee_id":payload["employee_id"].strip(),"password_hash":hash_password(payload["password"]),"role":"SUPERVISOR","machine_id":machine_id,"is_active":bool(payload.get("is_active",True)),"created_at":utcnow(),"updated_at":utcnow()}
-    try: db().users.insert_one(doc)
-    except DuplicateKeyError: raise HTTPException(409,"Email or employee ID already exists.")
-    audit(admin,"SUPERVISOR_CREATED",doc["_id"],{"machine_id":doc["machine_id"]}); return user_view(doc)
-
-@router.put("/admin/team/supervisors/{user_id}")
-def update_supervisor(user_id:str,payload:dict,admin=Depends(require_admin)):
-    ensure_mongo(); allowed={k:payload[k] for k in ("full_name","employee_id","is_active","machine_id") if k in payload}
-    if "machine_id" in allowed and not db().machines.find_one({"machine_id":allowed["machine_id"], "status":"ACTIVE"}): raise HTTPException(422,"Assigned machine must be active.")
-    if not allowed: raise HTTPException(422,"No supported fields supplied.")
-    allowed["updated_at"]=utcnow(); result=db().users.find_one_and_update({"_id":user_id,"role":"SUPERVISOR"},{"$set":allowed},return_document=True)
-    if not result: raise HTTPException(404,"Supervisor not found.")
-    audit(admin,"SUPERVISOR_UPDATED",user_id,allowed); return user_view(result)
-
-@router.delete("/admin/team/supervisors/{user_id}")
-def deactivate_supervisor(user_id:str,admin=Depends(require_admin)):
-    ensure_mongo(); result=db().users.update_one({"_id":user_id,"role":"SUPERVISOR"},{"$set":{"is_active":False,"updated_at":utcnow()}})
-    if not result.matched_count: raise HTTPException(404,"Supervisor not found.")
-    audit(admin,"SUPERVISOR_DEACTIVATED",user_id); return {"status":"deactivated"}
-
-@router.post("/admin/team/supervisors/{user_id}/reset-password")
-def reset_password(user_id:str,payload:dict,admin=Depends(require_admin)):
-    password=str(payload.get("password", "")); hashed=hash_password(password); result=db().users.update_one({"_id":user_id,"role":"SUPERVISOR"},{"$set":{"password_hash":hashed,"updated_at":utcnow()}})
-    if not result.matched_count: raise HTTPException(404,"Supervisor not found.")
-    audit(admin,"SUPERVISOR_PASSWORD_RESET",user_id); return {"status":"password_reset"}
-
-@router.get("/admin/team/supervisors/{user_id}")
-def supervisor_detail(user_id:str, admin=Depends(require_admin)):
-    ensure_mongo(); record=db().users.find_one({"_id":user_id,"role":"SUPERVISOR"})
-    if not record: raise HTTPException(404,"Supervisor not found.")
-    return user_view(record)
+@router.get("/inspection-evidence/{inspection_id}")
+def inspection_evidence(inspection_id: str, admin=Depends(require_admin)):
+    ensure_mongo()
+    record = db().inspections.find_one({"inspection_id": inspection_id})
+    if not record:
+        raise HTTPException(404, "Inspection not found.")
+    reference = Path(str(record.get("image_reference", "")))
+    if not reference.is_file():
+        raise HTTPException(404, "Captured inspection image is unavailable.")
+    media_type = {".png": "image/png", ".webp": "image/webp"}.get(reference.suffix.lower(), "image/jpeg")
+    return FileResponse(reference, media_type=media_type, filename=reference.name)
 
 @router.get("/admin/machines")
 def machines(admin=Depends(require_admin)): ensure_mongo(); return [clean(x) for x in db().machines.find().sort("machine_code",1)]
@@ -171,18 +147,9 @@ def update_machine(machine_id:str,payload:dict,admin=Depends(require_admin)):
     if not rec: raise HTTPException(404,"Machine not found.")
     audit(admin,"MACHINE_UPDATED",machine_id,changes); return clean(rec)
 
-@router.get("/supervisor/dashboard")
-def supervisor_dashboard(user=Depends(require_supervisor)):
-    ensure_mongo(); q={"machine_id":user["machine_id"]}; d=db(); total=d.inspections.count_documents(q); defects=d.inspections.count_documents(q|{"final_label":"DEFECT"})
-    return {"machine":clean(d.machines.find_one({"machine_id":user["machine_id"]})),"today_inspections":total,"today_defects":defects,"pending_reviews":d.inspections.count_documents(q|{"review_required":True,"review_completed":False}),"recent_inspections":[clean(x) for x in d.inspections.find(q).sort("timestamp",-1).limit(10)]}
-@router.get("/supervisor/machine")
-def supervisor_machine(user=Depends(require_supervisor)): ensure_mongo(); return clean(db().machines.find_one({"machine_id":user["machine_id"]}))
-
-@router.post("/supervisor/inspect",status_code=201)
-async def inspect(image:UploadFile=File(...), product_category:str|None=Form(None), user=Depends(current_user)):
+@router.post("/admin/inspect",status_code=201)
+async def inspect(image:UploadFile=File(...), product_category:str|None=Form(None), user=Depends(require_admin)):
     ensure_mongo()
-    if user.get("role") not in {"SUPERVISOR", "ADMIN"}:
-        raise HTTPException(403, "An operator or administrator account is required.")
     machine_id = user.get("machine_id")
     if not machine_id:
         machine = db().machines.find_one({"status": "ACTIVE"}, sort=[("machine_code", 1)])
@@ -202,54 +169,45 @@ async def inspect(image:UploadFile=File(...), product_category:str|None=Form(Non
     except Exception: raise HTTPException(503,"Model service unavailable. Try again.")
     prediction=str(result.get("prediction","")).upper(); confidence=float(result.get("confidence",0));
     if prediction not in {"OK","DEFECT"} or not 0<=confidence<=1: raise HTTPException(503,"Model service returned an invalid prediction.")
-    outcome=decide(prediction,confidence); doc={"_id":uuid.uuid4().hex,"inspection_id":iid,"machine_id":machine_id,"supervisor_id":user["_id"],"timestamp":utcnow(),"image_reference":str(reference),"prediction":prediction,"predicted_label":prediction,"confidence":confidence,"model_name":result.get("model_name", "ResNet-50"),"model_version":result.get("model_version","unknown"),"inference_latency_ms":float(result.get("latency_ms",0)),"status":outcome.status,"decision":outcome.decision,"final_label":outcome.final_label,"review_required":outcome.review_required,"review_completed":False,"operator_flagged":False,"operator_action":None,"operator_remark":None}
-    db().inspections.insert_one(doc); audit(user,"INSPECTION_PERFORMED",iid,{"prediction":prediction,"confidence":confidence}); return clean(doc)
+    # This portal registers confirmed defects only. Healthy frames are discarded after inference.
+    if prediction == "OK":
+        reference.unlink(missing_ok=True)
+        audit(user, "OK_FRAME_IGNORED", iid, {"confidence": confidence})
+        return {"inspection_id": iid, "timestamp": utcnow(), "prediction": "OK", "predicted_label": "OK", "confidence": confidence, "model_version": result.get("model_version", "unknown"), "inference_latency_ms": float(result.get("latency_ms", 0)), "status": "IGNORED_OK", "review_required": False, "review_completed": False, "registered": False, "image_url": None}
+    doc={"_id":uuid.uuid4().hex,"inspection_id":iid,"machine_id":machine_id,"created_by":user["_id"],"timestamp":utcnow(),"image_reference":str(reference),"prediction":"DEFECT","predicted_label":"DEFECT","confidence":confidence,"model_name":result.get("model_name", "ResNet-50"),"model_version":result.get("model_version","unknown"),"inference_latency_ms":float(result.get("latency_ms",0)),"status":"PENDING_REVIEW","decision":"PENDING_HUMAN_REVIEW","final_label":None,"review_required":True,"review_completed":False,"registered":False,"operator_flagged":False,"operator_action":None,"operator_remark":None}
+    db().inspections.insert_one(doc); audit(user,"DEFECT_CANDIDATE_CREATED",iid,{"prediction":"DEFECT","confidence":confidence}); return clean(doc)
 
-@router.post("/supervisor/inspections", status_code=201)
-async def create_inspection(image:UploadFile=File(...), product_category:str|None=Form(None), user=Depends(require_supervisor)):
-    return await inspect(image=image, product_category=product_category, user=user)
-
-@router.get("/supervisor/inspections")
-def supervisor_inspections(search:str|None=None,status_filter:str|None=Query(None,alias="status"),user=Depends(require_supervisor)):
-    ensure_mongo(); q={"machine_id":user["machine_id"]};
-    if search: q["inspection_id"]={"$regex":search,"$options":"i"}
-    if status_filter: q["status"]=status_filter
-    return [clean(x) for x in db().inspections.find(q).sort("timestamp",-1).limit(200)]
-@router.get("/supervisor/inspections/{inspection_id}")
-def supervisor_inspection(inspection_id:str,user=Depends(require_supervisor)):
-    ensure_mongo(); rec=db().inspections.find_one({"inspection_id":inspection_id})
-    if not rec: raise HTTPException(404,"Inspection not found.")
-    if rec["machine_id"]!=user["machine_id"]: raise HTTPException(403,"Inspection belongs to another machine.")
-    return clean(rec)
-@router.post("/supervisor/inspections/{inspection_id}/flag")
-def flag(inspection_id:str,user=Depends(require_supervisor)):
-    ensure_mongo(); rec=db().inspections.find_one_and_update({"inspection_id":inspection_id,"machine_id":user["machine_id"],"review_completed":False},{"$set":{"review_required":True,"operator_flagged":True,"status":"FLAGGED","decision":"PENDING_HUMAN_REVIEW","final_label":None}},return_document=True)
+@router.post("/admin/inspections/{inspection_id}/flag")
+def flag(inspection_id:str,user=Depends(require_admin)):
+    ensure_mongo(); rec=db().inspections.find_one_and_update({"inspection_id":inspection_id,"review_completed":False},{"$set":{"review_required":True,"operator_flagged":True,"status":"FLAGGED","decision":"PENDING_HUMAN_REVIEW","final_label":None}},return_document=True)
     if not rec: raise HTTPException(404,"Open inspection not found.")
     audit(user,"INSPECTION_FLAGGED",inspection_id); return clean(rec)
-@router.post("/supervisor/inspections/{inspection_id}/review")
-def review(inspection_id:str,payload:dict,user=Depends(require_supervisor)):
+@router.post("/admin/inspections/{inspection_id}/review")
+def review(inspection_id:str,payload:dict,user=Depends(require_admin)):
     ensure_mongo(); label=str(payload.get("human_label","")).upper(); remark=str(payload.get("remark","")).strip()
     if label not in {"OK","DEFECT"} or not remark: raise HTTPException(422,"A final label and non-empty remark are required.")
-    rec=db().inspections.find_one({"inspection_id":inspection_id,"machine_id":user["machine_id"]})
+    query={"inspection_id": inspection_id}
+    rec=db().inspections.find_one(query)
     if not rec: raise HTTPException(404,"Inspection not found.")
     if rec.get("review_completed"): raise HTTPException(409,"This inspection has already been reviewed.")
     # High-confidence DEFECT approval/denial and every pending/flagged review converge here.
     final_status="HUMAN_CONFIRMED_"+label
     feedback_id=uuid.uuid4().hex
     reviewed_at=utcnow()
-    db().inspections.update_one({"_id":rec["_id"]},{"$set":{"final_label":label,"human_label":label,"operator_action":label,"operator_remark":remark,"review_required":True,"review_completed":True,"reviewed_by":user["_id"],"reviewed_at":reviewed_at,"feedback_id":feedback_id,"status":final_status,"decision":"HUMAN_APPROVED" if label=="DEFECT" else "HUMAN_REJECTED"}})
-    feedback={"_id":feedback_id,"feedback_id":feedback_id,"inspection_id":inspection_id,"image_reference":rec["image_reference"],"machine_id":rec["machine_id"],"supervisor_id":user["_id"],"predicted_label":rec["predicted_label"],"human_label":label,"confidence":rec["confidence"],"remark":remark,"model_version":rec["model_version"],"created_at":reviewed_at,"included_in_training":False,"training_approved":False,"dataset_version":None}
-    db().feedback.insert_one(feedback); audit(user,"HUMAN_REVIEW_SUBMITTED",inspection_id,{"human_label":label}); return clean(db().inspections.find_one({"_id":rec["_id"]}))
+    if label == "OK":
+        # A denied defect is a false positive: do not retain it as a registered case.
+        reference = Path(str(rec.get("image_reference", "")))
+        reference.unlink(missing_ok=True)
+        db().inspections.delete_one({"_id": rec["_id"]})
+        audit(user, "DEFECT_CANDIDATE_DENIED", inspection_id, {"human_label": "OK", "remark": remark})
+        return {"inspection_id": inspection_id, "status": "DISCARDED", "registered": False, "review_completed": True, "human_label": "OK"}
+    db().inspections.update_one({"_id":rec["_id"]},{"$set":{"final_label":"DEFECT","human_label":"DEFECT","operator_action":"DEFECT","operator_remark":remark,"review_required":True,"review_completed":True,"registered":True,"reviewed_by":user["_id"],"reviewed_at":reviewed_at,"feedback_id":feedback_id,"status":"HUMAN_CONFIRMED_DEFECT","decision":"HUMAN_APPROVED"}})
+    feedback={"_id":feedback_id,"feedback_id":feedback_id,"inspection_id":inspection_id,"image_reference":rec["image_reference"],"machine_id":rec["machine_id"],"created_by":rec["created_by"],"predicted_label":rec["predicted_label"],"human_label":"DEFECT","confidence":rec["confidence"],"remark":remark,"model_version":rec["model_version"],"created_at":reviewed_at,"included_in_training":False,"training_approved":False,"dataset_version":None}
+    db().feedback.insert_one(feedback); audit(user,"DEFECT_APPROVED",inspection_id,{"human_label":"DEFECT","remark":remark}); return clean(db().inspections.find_one({"_id":rec["_id"]}))
 
 @router.get("/feedback/pending")
-def pending_feedback(user=Depends(current_user)):
-    ensure_mongo(); q={"review_required":True,"review_completed":False};
-    if user["role"]=="SUPERVISOR": q["machine_id"]=user["machine_id"]
-    return [clean(x) for x in db().inspections.find(q).sort("timestamp",1)]
-
-@router.get("/supervisor/reviews/pending")
-def supervisor_pending_reviews(user=Depends(require_supervisor)):
-    ensure_mongo(); q={"machine_id":user["machine_id"],"review_required":True,"review_completed":False}
+def pending_feedback(user=Depends(require_admin)):
+    ensure_mongo(); q={"prediction":"DEFECT","review_required":True,"review_completed":False};
     return [clean(x) for x in db().inspections.find(q).sort("timestamp",1)]
 
 @router.get("/admin/feedback")
@@ -267,7 +225,7 @@ def reject_feedback(feedback_id:str, admin=Depends(require_admin)):
     audit(admin,"FEEDBACK_REJECTED_FROM_TRAINING",feedback_id); return clean(rec)
 
 @router.get("/models")
-def models(user=Depends(current_user)):
+def models(user=Depends(require_admin)):
     ensure_mongo()
     registered = [clean(x) for x in db().model_versions.find().sort("created_at", -1)]
     if registered:
@@ -305,17 +263,17 @@ def admin_models(admin=Depends(require_admin)):
     return models(user=admin)
 
 @router.get("/notifications")
-def notifications(user=Depends(current_user)):
+def notifications(user=Depends(require_admin)):
     ensure_mongo()
     logs = db().audit_logs.find({"actor_id": user["_id"]}).sort("timestamp", -1).limit(25)
     return [{"id": str(item.get("_id", item.get("timestamp"))), "type": "info", "title": item.get("action", "Workspace event").replace("_", " ").title(), "message": "Workspace activity recorded.", "timestamp": item.get("timestamp").isoformat() if item.get("timestamp") else utcnow().isoformat(), "read": False} for item in logs]
 
 @router.post("/notifications/read")
-def mark_notifications_read(user=Depends(current_user)):
+def mark_notifications_read(user=Depends(require_admin)):
     return {"status": "ok"}
 
 @router.get("/models/active")
-def active_model(user=Depends(current_user)):
+def active_model(user=Depends(require_admin)):
     ensure_mongo(); active = clean(db().model_versions.find_one({"status":"PRODUCTION"}))
     if active:
         return active
