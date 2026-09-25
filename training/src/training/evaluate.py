@@ -48,7 +48,7 @@ def domain_aware_evaluation(
     device: torch.device,
     batch_size: int = 32,
     threshold: float = 0.5,
-    output_dir: str | Path = "ml/artifacts/reports",
+    output_dir: str | Path = "training/artifacts/reports",
 ) -> dict[str, Any]:
     from ..data.dataset_builder import ManufacturingDataset
 

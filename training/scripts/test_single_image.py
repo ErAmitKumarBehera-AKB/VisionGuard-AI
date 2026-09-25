@@ -8,12 +8,12 @@ from torchvision import transforms
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from ml.src.models.resnet50 import build_resnet50_model
+from training.src.models.resnet50 import build_resnet50_model
 
 
 CHECKPOINT_PATH = (
     PROJECT_ROOT
-    / "ml/artifacts/checkpoints/best_model_384.pt"
+    / "training/artifacts/checkpoints/best_model_384.pt"
 )
 
 IMAGE_SIZE = 384
@@ -25,13 +25,13 @@ def main():
         print()
         print("Usage:")
         print(
-            "python ml/scripts/test_single_image.py "
+            "python training/scripts/test_single_image.py "
             "/path/to/image.jpg"
         )
         print()
         print("Example:")
         print(
-            "python ml/scripts/test_single_image.py "
+            "python training/scripts/test_single_image.py "
             "/home/msi/Downloads/image.jpg"
         )
         sys.exit(1)

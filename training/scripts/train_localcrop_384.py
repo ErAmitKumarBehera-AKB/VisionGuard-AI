@@ -24,7 +24,7 @@ from torchvision import transforms
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from ml.src.models.resnet50 import build_resnet50_model
+from training.src.models.resnet50 import build_resnet50_model
 
 SEED = 42
 IMAGE_SIZE = 384
@@ -38,9 +38,9 @@ MIN_DELTA = 0.001
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-MANIFEST = PROJECT_ROOT / "ml/data/manifests/unified_manifest.csv"
-CHECKPOINT_DIR = PROJECT_ROOT / "ml/artifacts/checkpoints"
-REPORT_DIR = PROJECT_ROOT / "ml/artifacts/reports/localcrop_384"
+MANIFEST = PROJECT_ROOT / "training/data/manifests/unified_manifest.csv"
+CHECKPOINT_DIR = PROJECT_ROOT / "training/artifacts/checkpoints"
+REPORT_DIR = PROJECT_ROOT / "training/artifacts/reports/localcrop_384"
 
 BEST_CHECKPOINT = CHECKPOINT_DIR / "best_model_localcrop_384.pt"
 

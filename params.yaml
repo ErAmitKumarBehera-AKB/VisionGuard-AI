@@ -1,8 +1,8 @@
 prepare:
-  mvtec_dir: "ml/data/raw/mvtec"
-  casting_dir: "ml/data/raw/casting"
-  output_manifest_csv: "ml/data/manifests/unified_manifest.csv"
-  output_manifest_parquet: "ml/data/manifests/unified_manifest.parquet"
+  mvtec_dir: "training/data/raw/mvtec"
+  casting_dir: "training/data/raw/casting"
+  output_manifest_csv: "training/data/manifests/unified_manifest.csv"
+  output_manifest_parquet: "training/data/manifests/unified_manifest.parquet"
   mvtec_categories:
     - "cable"
     - "screw"
@@ -40,5 +40,5 @@ evaluate:
   batch_size: 32
   threshold: 0.50
   target_defect_recall: 0.95
-  output_report_json: "ml/artifacts/reports/evaluation_metrics.json"
-  output_confusion_matrix: "ml/artifacts/reports/confusion_matrix.png"
+  output_report_json: "training/artifacts/reports/evaluation_metrics.json"
+  output_confusion_matrix: "training/artifacts/reports/confusion_matrix.png"

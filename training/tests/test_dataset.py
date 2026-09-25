@@ -4,11 +4,11 @@ import pandas as pd
 from PIL import Image
 import pytest
 
-from ml.src.data.casting_loader import CastingLoader
-from ml.src.data.dataset_builder import BaseDatasetLoader, ManufacturingDataset, UnifiedDatasetBuilder
-from ml.src.data.mvtec_loader import MVTecLoader
-from ml.src.data.splitter import DatasetSplitter
-from ml.src.data.validation import DatasetValidator
+from training.src.data.casting_loader import CastingLoader
+from training.src.data.dataset_builder import BaseDatasetLoader, ManufacturingDataset, UnifiedDatasetBuilder
+from training.src.data.mvtec_loader import MVTecLoader
+from training.src.data.splitter import DatasetSplitter
+from training.src.data.validation import DatasetValidator
 
 
 @pytest.fixture

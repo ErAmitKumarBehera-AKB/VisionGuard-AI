@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 import pytest
 
-from ml.src.inference.predictor import DefectPredictor
+from training.src.inference.predictor import DefectPredictor
 
 
 @pytest.fixture

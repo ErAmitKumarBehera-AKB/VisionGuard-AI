@@ -9,12 +9,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 MANIFEST = (
     PROJECT_ROOT
-    / "ml/data/manifests/unified_manifest.csv"
+    / "training/data/manifests/unified_manifest.csv"
 )
 
 REPORT_DIR = (
     PROJECT_ROOT
-    / "ml/artifacts/reports/dataset_audit"
+    / "training/artifacts/reports/dataset_audit"
 )
 
 REPORT_DIR.mkdir(

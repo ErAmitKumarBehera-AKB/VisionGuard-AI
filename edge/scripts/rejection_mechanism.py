@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import time
-from ml.src.utils.logging import get_logger
+from training.src.utils.logging import get_logger
 
 logger = get_logger("edge.actuator")
 

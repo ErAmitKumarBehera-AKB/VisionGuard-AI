@@ -9,11 +9,11 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ml.src.data.casting_loader import CastingLoader
-from ml.src.data.dataset_builder import UnifiedDatasetBuilder
-from ml.src.data.mvtec_loader import MVTecLoader
-from ml.src.data.splitter import DatasetSplitter
-from ml.src.utils.logging import get_logger, setup_logging
+from training.src.data.casting_loader import CastingLoader
+from training.src.data.dataset_builder import UnifiedDatasetBuilder
+from training.src.data.mvtec_loader import MVTecLoader
+from training.src.data.splitter import DatasetSplitter
+from training.src.utils.logging import get_logger, setup_logging
 
 logger = get_logger("prepare_dataset")
 
@@ -23,7 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=str,
-        default="ml/configs/dataset.yaml",
+        default="training/configs/dataset.yaml",
         help="Path to dataset configuration YAML file.",
     )
     parser.add_argument("--mvtec-dir", type=str, default=None, help="Override MVTec AD root directory.")
@@ -52,21 +52,21 @@ def main() -> None:
     mvtec_dir = (
         args.mvtec_dir
         or os.getenv("MVTEC_DATA_DIR")
-        or raw_cfg.get("mvtec", {}).get("root_dir", "ml/data/raw/mvtec")
+        or raw_cfg.get("mvtec", {}).get("root_dir", "training/data/raw/mvtec")
     )
     casting_dir = (
         args.casting_dir
         or os.getenv("CASTING_DATA_DIR")
-        or raw_cfg.get("casting", {}).get("root_dir", "ml/data/raw/casting")
+        or raw_cfg.get("casting", {}).get("root_dir", "training/data/raw/casting")
     )
 
     out_csv = (
         args.output_csv
-        or storage_cfg.get("manifest_csv", "ml/data/manifests/unified_manifest.csv")
+        or storage_cfg.get("manifest_csv", "training/data/manifests/unified_manifest.csv")
     )
     out_parquet = (
         args.output_parquet
-        or storage_cfg.get("manifest_parquet", "ml/data/manifests/unified_manifest.parquet")
+        or storage_cfg.get("manifest_parquet", "training/data/manifests/unified_manifest.parquet")
     )
 
     logger.info("Initializing dataset loaders...")

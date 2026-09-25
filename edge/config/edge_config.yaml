@@ -9,7 +9,7 @@ camera:
   device_index: 0
   resolution: [640, 480]
   fps: 30
-  mock_synthetic_dir: "ml/data/raw/mvtec/metal_nut/test"
+  mock_synthetic_dir: "training/data/raw/mvtec/metal_nut/test"
 
 hardware_trigger:
   mode: "simulation"

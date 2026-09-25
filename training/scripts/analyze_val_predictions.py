@@ -8,15 +8,15 @@ from torchvision import transforms
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ml.src.models.resnet50 import build_resnet50_model
+from training.src.models.resnet50 import build_resnet50_model
 
 
 ROOT = Path(__file__).resolve().parents[2]
 
-CONFIG_PATH = ROOT / "ml/configs/training.yaml"
-MANIFEST_PATH = ROOT / "ml/data/manifests/unified_manifest.csv"
-CHECKPOINT_PATH = ROOT / "ml/artifacts/checkpoints/best_model.pt"
-OUTPUT_DIR = ROOT / "ml/artifacts/reports/384_analysis"
+CONFIG_PATH = ROOT / "training/configs/training.yaml"
+MANIFEST_PATH = ROOT / "training/data/manifests/unified_manifest.csv"
+CHECKPOINT_PATH = ROOT / "training/artifacts/checkpoints/best_model.pt"
+OUTPUT_DIR = ROOT / "training/artifacts/reports/384_analysis"
 
 
 def main():

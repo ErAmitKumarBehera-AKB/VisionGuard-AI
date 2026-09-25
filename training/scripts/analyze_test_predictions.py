@@ -9,22 +9,22 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ml.src.models.resnet50 import build_resnet50_model
-from ml.src.data.dataset_builder import ManufacturingDataset
-from ml.src.training.train import get_transforms
-from ml.src.utils.device import get_device
+from training.src.models.resnet50 import build_resnet50_model
+from training.src.data.dataset_builder import ManufacturingDataset
+from training.src.training.train import get_transforms
+from training.src.utils.device import get_device
 from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix, roc_auc_score
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-CHECKPOINT = PROJECT_ROOT / "ml/artifacts/checkpoints/best_model.pt"
-MANIFEST = PROJECT_ROOT / "ml/data/manifests/unified_manifest.parquet"
-MODEL_CONFIG = PROJECT_ROOT / "ml/configs/model.yaml"
-TRAINING_CONFIG = PROJECT_ROOT / "ml/configs/training.yaml"
+CHECKPOINT = PROJECT_ROOT / "training/artifacts/checkpoints/best_model.pt"
+MANIFEST = PROJECT_ROOT / "training/data/manifests/unified_manifest.parquet"
+MODEL_CONFIG = PROJECT_ROOT / "training/configs/model.yaml"
+TRAINING_CONFIG = PROJECT_ROOT / "training/configs/training.yaml"
 
-OUTPUT_DIR = PROJECT_ROOT / "ml/artifacts/reports/384_analysis"
+OUTPUT_DIR = PROJECT_ROOT / "training/artifacts/reports/384_analysis"
 
 
 def binary_metrics(y_true, y_pred, probs):

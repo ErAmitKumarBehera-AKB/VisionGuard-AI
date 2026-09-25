@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from edge.scripts.camera_interface import create_camera
 from edge.scripts.rejection_mechanism import SimulationRejectionMechanism
 from edge.scripts.sensor_trigger import SimulationSensorTrigger
-from ml.src.inference.predictor import DefectPredictor
-from ml.src.utils.logging import get_logger, setup_logging
+from training.src.inference.predictor import DefectPredictor
+from training.src.utils.logging import get_logger, setup_logging
 
 logger = get_logger("edge.runner")
 

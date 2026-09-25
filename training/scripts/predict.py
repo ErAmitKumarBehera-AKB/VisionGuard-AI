@@ -7,8 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ml.src.inference.predictor import DefectPredictor
-from ml.src.utils.logging import get_logger, setup_logging
+from training.src.inference.predictor import DefectPredictor
+from training.src.utils.logging import get_logger, setup_logging
 
 logger = get_logger("predict")
 
@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--checkpoint",
         type=str,
-        default="ml/artifacts/checkpoints/best_model.pt",
+        default="training/artifacts/checkpoints/best_model.pt",
         help="Path to trained model checkpoint.",
     )
     parser.add_argument("--threshold", type=float, default=0.50, help="Defect decision threshold.")

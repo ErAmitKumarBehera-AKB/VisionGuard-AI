@@ -26,7 +26,7 @@ class BentoMLClient:
     def _get_fallback_predictor(self):
         if self._fallback_predictor is None:
             try:
-                from ml.src.inference.predictor import DefectPredictor
+                from training.src.inference.predictor import DefectPredictor
 
                 cp = settings.MODEL_CHECKPOINT_PATH
                 valid_cp = cp if Path(cp).is_file() else None

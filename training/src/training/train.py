@@ -49,7 +49,7 @@ class ModelTrainer:
         self,
         config: dict[str, Any],
         manifest_df: pd.DataFrame,
-        checkpoint_dir: str | Path = "ml/artifacts/checkpoints",
+        checkpoint_dir: str | Path = "training/artifacts/checkpoints",
     ) -> None:
         self.config = config
         self.manifest_df = manifest_df

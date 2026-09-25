@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 from PIL import Image
 
-from ml.src.utils.logging import get_logger
+from training.src.utils.logging import get_logger
 
 logger = get_logger("edge.camera")
 

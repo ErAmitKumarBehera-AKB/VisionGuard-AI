@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import time
 from typing import Callable, Optional
 
-from ml.src.utils.logging import get_logger
+from training.src.utils.logging import get_logger
 
 logger = get_logger("edge.sensor")
 

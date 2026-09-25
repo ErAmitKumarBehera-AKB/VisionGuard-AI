@@ -6,9 +6,9 @@ labels:
 
 include:
   - "service.py"
-  - "ml/src/"
-  - "ml/configs/"
-  - "ml/artifacts/checkpoints/best_model.pt"
+  - "training/src/"
+  - "training/configs/"
+  - "training/artifacts/checkpoints/best_model.pt"
 
 python:
   requirements_txt: "./requirements.txt"

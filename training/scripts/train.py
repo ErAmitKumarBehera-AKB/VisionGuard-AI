@@ -8,17 +8,17 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ml.src.training.train import ModelTrainer
-from ml.src.utils.logging import get_logger, setup_logging
+from training.src.training.train import ModelTrainer
+from training.src.utils.logging import get_logger, setup_logging
 
 logger = get_logger("train")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train ResNet-50 Defect Detector on unified dataset.")
-    parser.add_argument("--config", type=str, default="ml/configs/training.yaml", help="Path to training config YAML.")
-    parser.add_argument("--model-config", type=str, default="ml/configs/model.yaml", help="Path to model config YAML.")
-    parser.add_argument("--manifest", type=str, default="ml/data/manifests/unified_manifest.parquet", help="Manifest path.")
+    parser.add_argument("--config", type=str, default="training/configs/training.yaml", help="Path to training config YAML.")
+    parser.add_argument("--model-config", type=str, default="training/configs/model.yaml", help="Path to model config YAML.")
+    parser.add_argument("--manifest", type=str, default="training/data/manifests/unified_manifest.parquet", help="Manifest path.")
     parser.add_argument("--epochs", type=int, default=None, help="Override number of training epochs.")
     parser.add_argument("--batch-size", type=int, default=None, help="Override batch size.")
     parser.add_argument("--lr", type=float, default=None, help="Override learning rate.")
@@ -53,7 +53,7 @@ def main() -> None:
             logger.error(
                 f"Dataset manifest not found at {manifest_path}!\n"
                 "Please run dataset preparation first:\n"
-                "  python ml/scripts/prepare_dataset.py"
+                "  python training/scripts/prepare_dataset.py"
             )
             sys.exit(1)
 

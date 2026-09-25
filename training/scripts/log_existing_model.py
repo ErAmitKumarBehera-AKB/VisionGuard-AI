@@ -9,14 +9,14 @@ import mlflow.pytorch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ml.src.models.resnet50 import build_resnet50_model
+from training.src.models.resnet50 import build_resnet50_model
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-CHECKPOINT = PROJECT_ROOT / "ml/artifacts/checkpoints/best_model.pt"
-MODEL_CONFIG = PROJECT_ROOT / "ml/configs/model.yaml"
-TRAINING_CONFIG = PROJECT_ROOT / "ml/configs/training.yaml"
+CHECKPOINT = PROJECT_ROOT / "training/artifacts/checkpoints/best_model.pt"
+MODEL_CONFIG = PROJECT_ROOT / "training/configs/model.yaml"
+TRAINING_CONFIG = PROJECT_ROOT / "training/configs/training.yaml"
 
 
 def main():

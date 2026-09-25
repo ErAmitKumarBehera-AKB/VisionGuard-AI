@@ -10,8 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bentoml
 from prometheus_client import Counter, Histogram
 
-from ml.src.inference.predictor import DefectPredictor
-from ml.src.utils.logging import get_logger
+from training.src.inference.predictor import DefectPredictor
+from training.src.utils.logging import get_logger
 
 logger = get_logger("serving.bentoml")
 
@@ -38,7 +38,7 @@ SERVING_PREDICTION_LATENCY = Histogram(
 class DefectInspectionService:
 
     def __init__(self) -> None:
-        checkpoint_path = os.getenv("MODEL_CHECKPOINT_PATH", "ml/artifacts/checkpoints/best_model.pt")
+        checkpoint_path = os.getenv("MODEL_CHECKPOINT_PATH", "training/artifacts/checkpoints/best_model.pt")
         cp = checkpoint_path if Path(checkpoint_path).is_file() else None
 
         if cp:

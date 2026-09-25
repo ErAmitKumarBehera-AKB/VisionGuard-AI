@@ -1,7 +1,7 @@
 import torch
 import pytest
 
-from ml.src.models.resnet50 import ResNet50DefectDetector, build_resnet50_model
+from training.src.models.resnet50 import ResNet50DefectDetector, build_resnet50_model
 
 
 def test_resnet50_instantiation():

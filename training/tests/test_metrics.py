@@ -1,7 +1,7 @@
 from pathlib import Path
 import pytest
 
-from ml.src.training.metrics import calculate_binary_metrics, plot_confusion_matrix
+from training.src.training.metrics import calculate_binary_metrics, plot_confusion_matrix
 
 
 def test_metrics_calculation():

@@ -10,13 +10,13 @@ ROOT = Path("/run/media/msi/CROSS/TCS_project")
 
 FN_CSV = (
     ROOT /
-    "ml/artifacts/reports/384_analysis/"
+    "training/artifacts/reports/384_analysis/"
     "false_negatives.csv"
 )
 
 OUTPUT = (
     ROOT /
-    "ml/artifacts/reports/384_analysis/"
+    "training/artifacts/reports/384_analysis/"
     "mvtec_false_negatives_with_masks.png"
 )
 
@@ -42,7 +42,7 @@ def find_mask(image_path):
 
     mask_path = (
         ROOT /
-        "ml/data/raw/mvtec" /
+        "training/data/raw/mvtec" /
         category /
         "ground_truth" /
         defect_type /

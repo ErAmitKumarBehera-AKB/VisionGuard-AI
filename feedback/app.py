@@ -96,7 +96,7 @@ def main():
             if st.button("Trigger Retraining Pipeline Check"):
                 st.info(
                     "Triggering retraining workflow...\n"
-                    "Command: `python ml/scripts/prepare_dataset.py && python ml/scripts/train.py`"
+                    "Command: `python training/scripts/prepare_dataset.py && python training/scripts/train.py`"
                 )
         else:
             st.info("No validated human feedback submitted yet. Review inspections above to populate.")

@@ -8,12 +8,12 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from ml.src.models.checkpoint import ModelCheckpointManager
-from ml.src.models.resnet50 import ResNet50DefectDetector
-from ml.src.training.evaluate import domain_aware_evaluation
-from ml.src.training.train import get_transforms
-from ml.src.utils.device import get_device
-from ml.src.utils.logging import get_logger, setup_logging
+from training.src.models.checkpoint import ModelCheckpointManager
+from training.src.models.resnet50 import ResNet50DefectDetector
+from training.src.training.evaluate import domain_aware_evaluation
+from training.src.training.train import get_transforms
+from training.src.utils.device import get_device
+from training.src.utils.logging import get_logger, setup_logging
 
 logger = get_logger("evaluate")
 
@@ -23,13 +23,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--checkpoint",
         type=str,
-        default="ml/artifacts/checkpoints/best_model.pt",
+        default="training/artifacts/checkpoints/best_model.pt",
         help="Path to trained model checkpoint.",
     )
     parser.add_argument(
         "--manifest",
         type=str,
-        default="ml/data/manifests/unified_manifest.parquet",
+        default="training/data/manifests/unified_manifest.parquet",
         help="Path to dataset manifest.",
     )
     parser.add_argument(
@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="ml/artifacts/reports",
+        default="training/artifacts/reports",
         help="Directory to save evaluation reports and plots.",
     )
     return parser.parse_args()

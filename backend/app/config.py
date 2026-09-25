@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     BENTOML_SERVICE_URL: str = "http://localhost:3000"
     BENTOML_TIMEOUT_SECONDS: float = 10.0
 
-    MODEL_CHECKPOINT_PATH: str = "ml/artifacts/checkpoints/best_model.pt"
+    MODEL_CHECKPOINT_PATH: str = "training/artifacts/checkpoints/best_model.pt"
 
     DATABASE_URL: str = "sqlite:///./backend/app/inspection.db"
 
