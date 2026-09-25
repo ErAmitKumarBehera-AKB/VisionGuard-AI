@@ -142,3 +142,14 @@ frontend/**/.turbo/
 *.webp
 !frontend/attached_assets/**
 !frontend/screenshots/**
+
+# Word Documents, Office Lock Files & Presentation Guides
+*.docx
+*.doc
+*.dotx
+*.docm
+~$*.docx
+~$*.doc
+Visual_Quality_Inspection_System_Jury_Defense_Guide.*
+build_master_document.py
+

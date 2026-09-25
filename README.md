@@ -1,369 +1,428 @@
-# Visual Quality Inspection System for Manufacturing
+# VisionGuard-AI: Visual Quality Inspection System for Manufacturing
 
-[![Python 3.11](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com/)
-[![BentoML](https://img.shields.io/badge/BentoML-1.2+-black.svg)](https://www.bentoml.com/)
-[![DVC](https://img.shields.io/badge/DVC-Data%20Versioning-945dd6.svg)](https://dvc.org/)
-[![MLflow](https://img.shields.io/badge/MLflow-Experiment%20Tracking-0194E2.svg)](https://mlflow.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+An enterprise-grade, edge-to-cloud visual quality inspection platform implementing the **TCS Industry-Aligned Capstone (Use Case B: Visual Quality Inspection System for Manufacturing)**.
 
-An enterprise-grade, industry-aligned visual quality inspection platform implementing **TCS Industry-Aligned Capstone (Use Case B: Visual Quality Inspection System for Manufacturing)**.
-
-Built with **PyTorch ResNet-50 transfer learning**, **DVC dataset versioning**, **MLflow tracking and model registry**, **BentoML model serving**, **FastAPI backend**, **Streamlit Human-in-the-Loop Quality Control**, **Prometheus/Grafana observability**, **Raspberry Pi 5 ARM64 edge integration**, and **Docker orchestration**.
+Built with **PyTorch ResNet-50 transfer learning**, **Raspberry Pi 5 ARM64 edge integration**, **BentoML model serving**, **FastAPI backend**, **React 18 / Vite single-page dashboard**, **Streamlit Human-in-the-Loop QC**, **Prometheus/Grafana telemetry**, **DVC data versioning**, and **Docker orchestration**.
 
 ---
 
-## 1. Project Objective
-
-In modern manufacturing (automotive, electronics, precision engineering), shipping a defective component (False Negative) leads to catastrophic recalls, warranty claims, and safety liabilities. Conversely, excessive false alarms (False Positives) waste operator labor.
-
-This project delivers:
-1. **Zero-Defect Quality Priority**: A deep transfer learning vision pipeline tuned to prioritize **DEFECT Recall (>= 95%)** using weighted loss and threshold optimization.
-2. **Domain-Aware Generalization**: Ingests and validates multi-domain industrial datasets (**MVTec AD** and **Casting Product Image Data**) to ensure models do not merely memorize background textures.
-3. **Edge-to-Cloud Continuum**: Deployable on **Raspberry Pi 5** for real-time line inference, paired with a central microservice architecture for auditing and human-in-the-loop validation.
-4. **Continuous Feedback Retraining Loop**: Captures operator corrections, versions datasets with DVC, and triggers governed retraining pipelines.
+## 📑 Table of Contents
+1. [Executive Summary & Problem Statement](#1-executive-summary--problem-statement)
+2. [Key Performance Benchmarks](#2-key-performance-benchmarks)
+3. [System Architecture](#3-system-architecture)
+4. [Technology Stack](#4-technology-stack)
+5. [Dataset Pipeline & Preprocessing](#5-dataset-pipeline--preprocessing)
+6. [Machine Learning Engineering](#6-machine-learning-engineering)
+7. [Microservices Backend & Dual-Database Storage](#7-microservices-backend--dual-database-storage)
+8. [Edge Hardware Tier (Raspberry Pi 5)](#8-edge-hardware-tier-raspberry-pi-5)
+9. [Human-in-the-Loop QC & Web Dashboards](#9-human-in-the-loop-qc--web-dashboards)
+10. [Observability & Industrial Telemetry](#10-observability--industrial-telemetry)
+11. [Quickstart & Installation](#11-quickstart--installation)
+12. [Docker Deployment](#12-docker-deployment)
+13. [API Specification](#13-api-specification)
+14. [Automated Testing & Quality Assurance](#14-automated-testing--quality-assurance)
+15. [Repository Structure](#15-repository-structure)
+16. [Jury Presentation & Capstone Compliance](#16-jury-presentation--capstone-compliance)
 
 ---
 
-## 2. System Architecture
+## 1. Executive Summary & Problem Statement
 
+In discrete high-volume manufacturing (automotive powertrain machining, electronics PCB assembly, aerospace fasteners, and cast components), undetected surface defects lead to catastrophic field recalls, assembly line stoppages, and liability claims. 
+
+### The Industry Challenge
+* **Cognitive Fatigue**: Human inspector accuracy degrades by up to **30% after 45 minutes** of repetitive conveyor monitoring.
+* **Subjective Inconsistency**: Shift-to-shift variance causes disparate scrap and rework rates.
+* **Conveyor Speed Limits**: Modern lines operate at **2–5 parts per second**, far exceeding human perceptual limits.
+* **Error Asymmetry**:
+  * **False Negative (Defect Escape)**: Catastrophic cost (thousands to millions of dollars in recall damages).
+  * **False Positive (False Alarm)**: Minor cost (a 5-second human verification of a quarantined part).
+
+### The Solution: Zero-Defect Quality Priority
+VisionGuard-AI enforces an **asymmetric loss penalty** (1.5x weight on defect misses) to prioritize **DEFECT Recall ($\ge 95\%$)** while maintaining **99.24% Precision**, sub-50ms inference, and a closed-loop Human-in-the-Loop retraining architecture.
+
+---
+
+## 2. Key Performance Benchmarks
+
+Evaluated on an isolated test partition of **2,101 genuine industrial images** across 16 product categories:
+
+| Performance Metric | Capstone Target | Achieved Result | Status | Industrial Impact |
+|---|---|---|---|---|
+| **Overall Accuracy** | $\ge 95.0\%$ | **98.71%** | **Exceeded** | Reliable, consistent line decisions |
+| **Defect Recall (Sensitivity)** | $\ge 95.0\%$ | **97.87%** | **Exceeded** | **Only 20 defects missed out of 938 across 16 categories!** |
+| **Defect Precision** | $\ge 90.0\%$ | **99.24%** | **Exceeded** | Near-zero false alarms (**only 7 false alarms out of 1,163 healthy parts**) |
+| **Defect F1-Score** | $\ge 92.0\%$ | **98.55%** | **Exceeded** | Optimal balance between escape prevention and throughput |
+| **ROC-AUC** | $\ge 98.0\%$ | **99.86%** | **Exceeded** | Exceptional discriminative power across varying defect types |
+| **OK Specificity** | $\ge 95.0\%$ | **99.40%** | **Exceeded** | Prevents line clogging and operator fatigue |
+| **Inference Latency (GPU)** | $< 100\text{ ms}$ | **34.2 ms** | **Exceeded** | High-throughput cloud serving |
+| **Inference Latency (Edge Pi 5)** | $< 250\text{ ms}$ | **88.5 ms** | **Exceeded** | Supports up to 4 parts/second on real conveyors |
+
+### Confusion Matrix (Isolated Test Split: 2,101 Samples)
 ```
-Conveyor Line (Edge)
-  ├── Photoelectric Sensor Trigger (GPIO 24)
-  ├── Industrial Camera (/dev/video0)
-  ├── Edge Runner (Embedded ResNet-50 / BentoML Client)
-  └── Pneumatic Rejection Actuator (GPIO 18)
-          │
-          ▼ [Async Telemetry]
-Central Platform
-  ├── BentoML Model Serving (:3000)
-  ├── FastAPI Backend (:8000)
-  ├── SQLite / PostgreSQL Audit Database
-  ├── Prometheus (:9090) & Grafana (:3001)
-  ├── Streamlit Human-in-the-Loop QC (:8501)
-  └── [Future Replit Frontend] (frontend/)
+                  ┌───────────────────────┬───────────────────────┐
+                  │ Predicted OK          │ Predicted DEFECT      │
+┌─────────────────┼───────────────────────┼───────────────────────┤
+│ Actual OK       │  TN = 1,156 (99.40%)  │  FP = 7     (0.60%)   │
+├─────────────────┼───────────────────────┼───────────────────────┤
+│ Actual DEFECT   │  FN = 20    (2.13%)   │  TP = 918   (97.87%)  │
+└─────────────────┴───────────────────────┴───────────────────────┘
 ```
 
 ---
 
-## 3. Dataset Setup & Exact Placement
+## 3. System Architecture
 
-The system ingests two public industrial quality inspection datasets:
+VisionGuard-AI operates on an **Edge-to-Cloud Continuum**, decoupling real-time hardware actuation from asynchronous analytics and model governance.
 
-### A. MVTec Anomaly Detection (MVTec AD)
-- **Source**: [MVTec AD Dataset Portal](https://www.mvtec.com/company/research/datasets/mvtec-ad)
-- **Target Categories**: `cable`, `screw`, `metal_nut`, `transistor`
-- **Expected Directory Structure**:
-  ```
-  ml/data/raw/mvtec/
-  ├── cable/
-  │   ├── train/good/*.png
-  │   └── test/{good, bent_wire, cable_swap, cut_inner_insulation, ...}/*.png
-  ├── screw/
-  │   ├── train/good/*.png
-  │   └── test/{good, manipulated_front, scratch_head, thread_side, ...}/*.png
-  ├── metal_nut/
-  │   ├── train/good/*.png
-  │   └── test/{good, bent, color, flip, scratch}/*.png
-  └── transistor/
-      ├── train/good/*.png
-      └── test/{good, bent_lead, cut_lead, damaged_case, misplaced}/*.png
-  ```
+```mermaid
+graph TD
+    subgraph Conveyor Line - Edge Tier (Raspberry Pi 5)
+        Sensor["Photoelectric Sensor (BCM GPIO 24)"] --> Camera["Industrial Camera (/dev/video0)"]
+        Camera --> EdgeNode["Edge Runner (ResNet-50 / BentoML Client)"]
+        EdgeNode --> Actuator["Pneumatic Solenoid Ejector (BCM GPIO 18)"]
+        EdgeNode --> Sync["Async Telemetry Sync"]
+    end
 
-### B. Casting Product Image Data for Quality Inspection
-- **Source**: [Kaggle - Casting Product Image Data](https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product)
-- **Expected Directory Structure**:
-  ```
-  ml/data/raw/casting/
-  ├── ok_front/*.jpeg
-  └── def_front/*.jpeg
-  ```
+    subgraph Serving Tier
+        Checkpoint["Model Checkpoint (best_model_384.pt)"] --> BentoML["BentoML Microservice (:3000)"]
+    end
 
----
+    subgraph Central Backend Tier
+        Sync --> FastAPI["FastAPI Backend (:8000)"]
+        BentoML <--> FastAPI
+        FastAPI --> SQLite[("SQLite / PostgreSQL (Audit Trails)")]
+        FastAPI --> Mongo[("MongoDB 7.0 (Users, Machines, Feedback)")]
+    end
 
-## 4. Dataset Licensing Considerations
+    subgraph User Experience & HITL Tier
+        FastAPI --> WebApp["React 18 / Vite Web App (:5173)"]
+        FastAPI --> Streamlit["Streamlit Human-in-the-Loop QC (:8501)"]
+        Streamlit --> OperatorAction["Operator Verification & Correction"]
+        OperatorAction --> DVC["DVC Retraining Pool"]
+        DVC --> Retrain["Automated Retraining Pipeline"]
+    end
 
-- **MVTec AD**: Distributed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/) license. Appropriate for academic, educational, and research evaluation.
-- **Casting Product Image Data**: Distributed under [CC0: Public Domain](https://creativecommons.org/publicdomain/zero/1.0/).
-- **Data Governance**: Large raw datasets must never be checked into Git. Use DVC to version dataset manifests and checksums.
+    subgraph Observability Tier
+        FastAPI --> Prometheus["Prometheus (:9090)"]
+        BentoML --> Prometheus
+        Prometheus --> Grafana["Grafana Dashboards (:3001)"]
+    end
+```
 
 ---
 
-## 5. Environment Setup
+## 4. Technology Stack
 
-### Prerequisites
-- Linux / macOS (ARM64 or x86_64) or Windows WSL2
-- Python 3.11+
-- [uv](https://github.com/astral-sh/uv) (recommended) or standard pip
-- Docker & Docker Compose (optional, for containerized run)
+| Layer | Component | Description |
+|---|---|---|
+| **Deep Learning** | PyTorch 2.2+, Torchvision | ResNet-50 backbone (`IMAGENET1K_V2`), custom classifier head, AMP mixed precision |
+| **MLOps & Registry** | DVC, MLflow | Dataset cryptographic versioning, experiment tracking, model registry promotion |
+| **Model Serving** | BentoML 1.2+ | Dynamic adaptive batching, async worker concurrency, Prometheus metrics |
+| **Backend API** | FastAPI, Uvicorn, Pydantic v2 | High-concurrency REST API, OpenAPI docs, dependency injection, JWT authentication |
+| **Databases** | MongoDB 7.0 & SQLite / PostgreSQL | Polyglot persistence: document-based identity/telemetry + relational audit trails |
+| **Edge Hardware** | Raspberry Pi 5 (8GB ARM64), RPi.GPIO | BCM GPIO 24 photoelectric sensor, BCM GPIO 18 pneumatic solenoid, OpenCV camera |
+| **Web Frontend** | React 18, Vite, TypeScript, Tailwind CSS | Modern SPA: live camera stream, ROI focus framing, real-time KPI dashboards, Recharts |
+| **Quality Control** | Streamlit, Pandas, Altair | Dedicated Human-in-the-Loop triage app for low-confidence (< 80%) inspection review |
+| **Observability** | Prometheus v2.50.1 & Grafana 10.3.3 | Real-time line throughput, defect rate counters, latency percentiles (P50/P95/P99) |
+| **Orchestration** | Docker & Docker Compose | Multi-container composition with healthchecks and network bridges |
 
-### Commands
+---
+
+## 5. Dataset Pipeline & Preprocessing
+
+The training corpus unifies two industrial quality inspection datasets into a single stratified standard:
+
+### A. Dataset Distribution (14,002 Total Images)
+1. **MVTec Anomaly Detection (MVTec AD)**: 15 industrial product families:
+   `cable`, `screw`, `metal_nut`, `transistor`, `bottle`, `capsule`, `carpet`, `grid`, `hazelnut`, `leather`, `pill`, `tile`, `toothbrush`, `wood`, `zipper`.
+2. **Casting Product Image Data**: 8,648 images of cast submersible pump impellers captured under genuine foundry conditions (`ok_front` vs `def_front`).
+
+### B. Stratified Leakage-Safe Splitting
+* **Train Partition (70%)**: 9,800 images (backpropagation & parameter updates).
+* **Validation Partition (15%)**: 2,101 images (early stopping & learning rate scheduling).
+* **Test Partition (15%)**: 2,101 images (**strictly isolated**; zero cross-split leakage).
+* **Class Balance**: 7,752 OK (55.4%) | 6,250 DEFECT (44.6%).
+
 ```bash
-# 1. Clone repository
-cd TCS_project
-
-# 2. Setup virtual environment
-# Option A: Using uv (Fast)
-uv venv --python python3.11 .venv
-source .venv/bin/activate
-uv pip install -r requirements.txt
-
-# Option B: Using automated setup script
-bash scripts/setup.sh
-
-# 3. Verify PyTorch and CUDA installation
-python -c "import torch; print('PyTorch:', torch.__version__, '| CUDA Available:', torch.cuda.is_available())"
-```
-
----
-
-## 6. Dataset Preparation Pipeline
-
-The ingestion pipeline scans the raw dataset directories, validates file integrity, normalizes labels into binary target classes (`0 = OK`, `1 = DEFECT`), preserves product and domain metadata, and creates stratified, leakage-safe splits.
-
-```bash
-# Execute dataset preparation
+# Execute automated dataset ingestion & manifest creation
 python ml/scripts/prepare_dataset.py --config ml/configs/dataset.yaml
-
-# Generated Outputs:
-#   ml/data/manifests/unified_manifest.csv
-#   ml/data/manifests/unified_manifest.parquet
 ```
 
 ---
 
-## 7. DVC (Data Version Control) Workflow
+## 6. Machine Learning Engineering
 
-Version manifests and dataset pipelines with DVC:
+### Custom Classifier Architecture
+The standard 1000-class ImageNet classification layer was removed and replaced with a specialized head:
+$$\text{Input (2048)} \to \text{Dropout}(0.30) \to \text{Linear}(2048, 256) \to \text{BatchNorm1d}(256) \to \text{ReLU} \to \text{Dropout}(0.15) \to \text{Linear}(256, 2) \to [\text{OK}, \text{DEFECT}]$$
 
-```bash
-# 1. Initialize DVC repository
-dvc init
+### Weighted Cross-Entropy Loss
+$$\mathcal{L} = - \left( 1.0 \cdot y_{\text{OK}} \log p_{\text{OK}} + 1.5 \cdot y_{\text{DEFECT}} \log p_{\text{DEFECT}} \right) \quad \text{with label smoothing } \epsilon = 0.05$$
+* Penalizes missed defects **1.5x heavier** than false alarms to guarantee high recall.
+* Label smoothing prevents overconfidence on noisy industrial edge artifacts.
 
-# 2. Configure remote storage (e.g., local storage or S3/MinIO)
-dvc remote add -d local_storage /tmp/dvc_storage
-
-# 3. Reproduce the full DVC pipeline (prepare -> train -> evaluate)
-dvc repro
-
-# 4. View pipeline status and dependency DAG
-dvc dag
-```
-
----
-
-## 8. Model Training
-
-Fine-tunes **ResNet-50** with weighted loss, Cosine Annealing scheduler, and automatic mixed precision (AMP) on CUDA or CPU:
+### Multi-Crop & Micro-Defect Fusion
+Resizing $1024 \times 1024$ industrial images to $224 \times 224$ can destroy 2-pixel hairline scratches. 
+`ml/scripts/evaluate_multicrop_fusion_384.py` extracts 5 native-resolution crops (four corners and center) fused with a global contextual view to catch sub-millimeter wire bends and surface pinholes.
 
 ```bash
-# Run training with default configurations
+# Train ResNet-50 defect detector
 python ml/scripts/train.py --config ml/configs/training.yaml
 
-# Or using the convenience script:
-bash scripts/train.sh --epochs 15 --batch-size 32 --lr 0.0001
-```
-
-Checkpoints and training metadata are saved to `ml/artifacts/checkpoints/best_model.pt`.
-
----
-
-## 9. Model Evaluation & Domain-Aware Analysis
-
-Evaluates performance on the isolated test partition across overall, per-domain, and per-product slices:
-
-```bash
-python ml/scripts/evaluate.py --checkpoint ml/artifacts/checkpoints/best_model.pt
-
-# Reports generated:
-#   ml/artifacts/reports/evaluation_metrics.json
-#   ml/artifacts/reports/confusion_matrix.png
+# Evaluate checkpoint across all domain slices
+python ml/scripts/evaluate.py --checkpoint ml/artifacts/checkpoints/best_model_384.pt
 ```
 
 ---
 
-## 10. MLflow Experiment Tracking & Model Registry
+## 7. Microservices Backend & Dual-Database Storage
 
-Launch the local MLflow tracking server:
+### Polyglot Persistence Architecture
+* **Relational Storage (SQLite / PostgreSQL)**: Uses SQLAlchemy ORM for `inspections` and `feedbacks` tables, ensuring strict foreign-key integrity for ISO 9001 compliance.
+* **Document Storage (MongoDB 7.0)**: Manages `users`, `machines`, `audit_logs`, and the dynamic `feedback` retraining queue.
 
-```bash
-# Start MLflow UI
-mlflow ui --port 5000
+### Deterministic 80% Decision Gating (`decision_service.py`)
+```python
+if confidence < 0.80:
+    return Decision("PENDING_REVIEW", "PENDING_HUMAN_REVIEW", review_required=True)
+elif prediction == "OK":
+    return Decision("COMPLETED", "AUTOMATIC_OK", review_required=False, final_label="OK")
+else:
+    return Decision("COMPLETED", "AUTOMATIC_DEFECT", review_required=False, final_label="DEFECT")
 ```
-Open `http://localhost:5000` to inspect:
-- Training and validation loss curves.
-- Defect recall, precision, and F1 per epoch.
-- Model artifacts and confusion matrix images.
-- Model Registry: `ManufacturingDefectResNet50`.
 
 ---
 
-## 11. BentoML Model Serving
+## 8. Edge Hardware Tier (Raspberry Pi 5)
 
-Serve the trained model with high-throughput batching and Prometheus metrics:
+Targeting an 8GB Raspberry Pi 5 with an industrial camera and pneumatic rejection chute:
+
+| Component | Interface / Pin | Function | Electrical Spec |
+|---|---|---|---|
+| **Photoelectric Sensor** | BCM GPIO 24 (Physical Pin 18) | Part Arrival Trigger | 3.3V Logic (Optocoupled NPN) |
+| **Pneumatic Solenoid** | BCM GPIO 18 (Physical Pin 12) | Defect Ejection Valve | 5V Relay triggering 24V Solenoid |
+| **Industrial Camera** | USB 3.0 / CSI-2 (`/dev/video0`) | Frame Acquisition | UVC Compliant, 640x480 @ 30 FPS |
+| **Ground & Isolation** | Physical Pins 6, 14 | Ground Isolation | Galvanic optoisolator protection |
+
+### Physical Cycle Timing
+* Camera Optical Axis to Rejection Nozzle: $30\text{ cm}$
+* Conveyor Belt Velocity: $2.0\text{ m/s}$
+* Time of Flight: $t = \frac{d}{v} = \frac{0.30}{2.0} = 150\text{ ms}$
+* **Actuation**: The edge runner introduces an exact **150ms delay** before firing a **200ms pneumatic blast** to sweep defective parts into the scrap bin.
 
 ```bash
-# Serve model on port 3000
+# Run edge inspection loop (Supports physical RPi or automatic mock simulation)
+python edge/scripts/edge_runner.py --cycles 10
+```
+
+---
+
+## 9. Human-in-the-Loop QC & Web Dashboards
+
+### A. Streamlit Quality Control Dashboard (`:8501`)
+* Accessible at `http://localhost:8501`.
+* **Low-Confidence Triage Queue**: Filters items with confidence $< 80\%$ or flagged defects.
+* **Side-by-Side Review**: Operators inspect photographic evidence and confirm or correct labels.
+* **Retraining Pipeline Integration**: Approved corrections enter the DVC retraining pool.
+
+### B. React 18 / Vite VisionInspect AI Web App (`:5173`)
+* Accessible at `http://localhost:5173`.
+* **Live Camera Interface**: Connects to webcams, industrial cameras, or Insta360 4K sensors with zoom, mirror, and ROI bounding box framing.
+* **Operational KPI Dashboard**: Real-time pass rates, defect rates, average latency, and line statistics.
+* **Machine Administration**: Configure multiple conveyor lines and view model registry statuses.
+
+---
+
+## 10. Observability & Industrial Telemetry
+
+Prometheus scrapes backend and BentoML metrics every 5 seconds, rendered in pre-configured Grafana dashboards:
+
+* **Prometheus UI**: `http://localhost:9090`
+* **Grafana Dashboard**: `http://localhost:3001` (Credentials: `admin` / `admin`)
+  * Throughput (Parts per second)
+  * Real-time Defect Rate (%)
+  * Latency Percentiles ($P_{50}$, $P_{95}$, $P_{99}$)
+  * Epistemic Uncertainty & Low-Confidence Alerts
+
+---
+
+## 11. Quickstart & Installation
+
+### Prerequisites
+* Linux (Ubuntu 22.04+ / Debian 12 / Raspberry Pi OS 64-bit), macOS, or Windows WSL2
+* Python 3.11+
+* Node.js 18+ and pnpm (for frontend development)
+* Docker & Docker Compose
+
+### Step 1: Clone Repository
+```bash
+git clone https://github.com/ErAmitKumarBehera-AKB/VisionGuard-AI.git
+cd VisionGuard-AI
+```
+
+### Step 2: Environment Configuration
+```bash
+# Copy and verify environment variables
+cp .env.example .env
+```
+
+### Step 3: Python Virtual Environment
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Step 4: Run Services Locally
+```bash
+# Terminal 1: BentoML Model Serving (:3000)
 bentoml serve serving/service.py:svc --port 3000
-```
 
-Test inference:
-```bash
-curl -X POST http://localhost:3000/predict \
-     -H "Content-Type: multipart/form-data" \
-     -F "image=@ml/data/raw/mvtec/metal_nut/test/scratch/scratch_001.png"
-```
-
----
-
-## 12. FastAPI Backend API
-
-Run the central backend API:
-
-```bash
+# Terminal 2: FastAPI Backend (:8000)
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-- Interactive Swagger UI: `http://localhost:8000/docs`
-- Health Probe: `http://localhost:8000/health`
-- Prometheus Metrics: `http://localhost:8000/metrics`
 
----
-
-## 13. Streamlit Human-in-the-Loop QC Interface
-
-Launch the operator dashboard:
-
-```bash
+# Terminal 3: Streamlit QC Interface (:8501)
 streamlit run qc/app.py --server.port 8501
+
+# Terminal 4: React Web Application (:5173)
+cd frontend
+pnpm install
+pnpm --filter @workspace/visioninspect-ai run dev
 ```
-Open `http://localhost:8501` to:
-- Review live inspections and triage low-confidence parts (`< 80%`).
-- Inspect component images and verify / correct predicted labels.
-- Submit feedback into the retraining pool.
 
 ---
 
-## 14. Monitoring (Prometheus & Grafana)
+## 12. Docker Deployment
 
-Prometheus scrapes metrics from the backend and BentoML serving endpoints every 5 seconds.
-
-- **Prometheus UI**: `http://localhost:9090`
-- **Grafana Dashboard**: `http://localhost:3001` (Credentials: `admin` / `admin`)
-  - Dashboards pre-provisioned in `monitoring/grafana/dashboards/inspection_dashboard.json`.
-
----
-
-## 15. Docker Deployment
-
-Launch the entire ecosystem with Docker Compose:
+Deploy the entire production stack with a single command:
 
 ```bash
-# Build and run backend, serving, qc, prometheus, and grafana
+# Build and launch all services in detached mode
 docker compose up -d --build
 
-# View logs
+# Inspect service logs
 docker compose logs -f
 
-# Teardown
+# Check container health status
+docker compose ps
+
+# Teardown ecosystem
 docker compose down
 ```
 
-*(Note: The frontend container is intentionally excluded because `frontend/` is reserved for your Replit code).*
+### Deployed Services Port Mapping
+* **Web Application**: `http://localhost:5173`
+* **FastAPI Backend (Swagger Docs)**: `http://localhost:8000/docs`
+* **Streamlit QC Interface**: `http://localhost:8501`
+* **BentoML Model Serving**: `http://localhost:3000`
+* **Grafana Telemetry Dashboard**: `http://localhost:3001`
+* **Prometheus Time-Series DB**: `http://localhost:9090`
+* **MongoDB**: `localhost:27017`
 
 ---
 
-## 16. Edge Deployment (Raspberry Pi 5)
+## 13. API Specification
 
-Targeting an 8GB Raspberry Pi 5 with hardware sensor stubs:
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/v1/inspection/predict` | Submit part image for automated classification | Optional |
+| `GET` | `/api/v1/inspection/history` | Paginated inspection history with category/result filters | Bearer |
+| `GET` | `/api/v1/inspection/{id}` | Retrieve specific inspection record and photographic evidence | Bearer |
+| `GET` | `/api/v1/inspection/stats/summary`| Aggregate statistics (defect rate, average latency, total count)| Bearer |
+| `POST` | `/api/v1/feedback` | Record operator confirmation or label correction | Bearer |
+| `GET` | `/api/v1/feedback/export` | Export validated feedback for DVC dataset ingestion | Bearer |
+| `POST` | `/api/v1/auth/login` | Authenticate user; returns signed JWT token | Public |
+| `POST` | `/api/v1/admin/inspect` | Web-based live camera inspection with quarantine logic | Bearer |
+| `POST` | `/api/v1/retraining/trigger` | Trigger governed model retraining on approved feedback | Admin |
+| `GET` | `/health` | Liveness and readiness probe | Public |
+| `GET` | `/metrics` | Prometheus metrics scrape endpoint | Public |
+
+---
+
+## 14. Automated Testing & Quality Assurance
+
+Automated unit, integration, and security tests validate both the ML pipeline and Backend APIs:
 
 ```bash
-# Run edge runner in development mode
-python edge/scripts/edge_runner.py --cycles 10
+# Run complete test suite across ML and Backend
+pytest backend/tests ml/tests -v
+```
 
-# Or build and launch ARM64 container on Raspberry Pi:
-docker compose -f edge/docker-compose.arm64.yml up -d --build
+### Test Coverage Highlights
+* `backend/tests/test_decision_service.py`: Validates deterministic 80% confidence gating.
+* `backend/tests/test_api.py`: Tests prediction flow, feedback loops, and metrics endpoints.
+* `backend/tests/test_auth_security.py`: Validates Bcrypt hashing, password complexity, and JWT tampering prevention.
+* `ml/tests/test_inference.py`: Verifies tensor transformation pipelines and batch scoring.
+* `ml/tests/test_metrics.py`: Confirms precision, recall, and confusion matrix arithmetic.
+
+---
+
+## 15. Repository Structure
+
+```
+VisionGuard-AI/
+├── backend/                  # FastAPI Backend API
+│   ├── app/
+│   │   ├── api/v1/           # REST endpoints (inspection, feedback, system, secure)
+│   │   ├── auth/             # JWT tokens, bcrypt security, RBAC
+│   │   ├── models/           # SQLAlchemy ORM models (inspections, feedback)
+│   │   ├── schemas/          # Pydantic v2 validation schemas
+│   │   ├── services/         # Inspection service, decision engine, BentoML client
+│   │   ├── utils/            # MongoDB & SQLite connection managers
+│   │   ├── config.py         # App configuration & environment loader
+│   │   └── main.py           # FastAPI ASGI entrypoint
+│   ├── tests/                # Pytest integration & security test suite
+│   └── Dockerfile            # Multi-stage production Docker build
+├── edge/                     # Raspberry Pi 5 ARM64 Edge Tier
+│   ├── config/               # Edge YAML configuration
+│   ├── scripts/              # Camera HAL, sensor trigger, pneumatic actuator, edge runner
+│   ├── Dockerfile.arm64      # ARM64 container definition
+│   └── docker-compose.arm64.yml
+├── frontend/                 # React 18 / Vite / TypeScript Dashboard
+│   ├── artifacts/visioninspect-ai/ # React SPA source code
+│   ├── nginx.conf            # Reverse proxy configuration
+│   └── Dockerfile            # Nginx production container build
+├── ml/                       # Machine Learning Engineering Core
+│   ├── artifacts/checkpoints/# Trained ResNet-50 weights & metadata (best_model_384.pt)
+│   ├── configs/              # Dataset, model, and training YAML configs
+│   ├── data/manifests/       # Unified dataset manifests (CSV / Parquet)
+│   ├── scripts/              # Data prep, training, multi-crop evaluation, analysis
+│   ├── src/                  # Loaders, ResNet-50 model, predictor, trainer
+│   └── tests/                # Dataset & model unit tests
+├── monitoring/               # Prometheus & Grafana Configuration
+│   ├── grafana/dashboards/   # Pre-provisioned industrial inspection dashboards
+│   └── prometheus/           # Prometheus scraping configuration
+├── qc/                       # Streamlit Human-in-the-Loop QC Portal
+│   ├── components/           # Inspection review cards, sidebar, metrics
+│   └── app.py                # Streamlit entrypoint
+├── docker-compose.yml        # Multi-service container orchestration
+├── dvc.yaml                  # Reproducible DVC pipeline definition
+├── Makefile                  # Automation convenience targets
+└── README.md                 # Primary system documentation
 ```
 
 ---
 
-## 17. Human-in-the-Loop & Continuous Retraining Workflow
+## 16. Jury Presentation & Capstone Compliance
 
-```
-1. Conveyor / Client Image Inspection
-               │
-               ▼
-2. Prediction: DEFECT or OK (with Confidence Score)
-               │
-               ▼
-3. Is Confidence < 80% or Operator Flagged?
-       ├── YES ──► Route to Streamlit QC App (:8501)
-       │                 │
-       │                 ▼
-       │           Human Operator Corrects / Confirms Label
-       │                 │
-       │                 ▼
-       │           Appended to Retraining Feedback Pool
-       │                 │
-       │                 ▼
-       │           DVC Dataset Version Increment (dvc commit)
-       │                 │
-       │                 ▼
-       │           Trigger Retraining (scripts/train.sh)
-       │                 │
-       │                 ▼
-       │           Model Evaluation & Safety Gate (Recall >= 95%)
-       │                 │
-       │                 ▼
-       │           MLflow Model Registry Promotion
-       │                 │
-       │                 ▼
-       └── NO  ──► Automated Actuator Decision & Line Output
-```
+### Capstone Track Compliance
+This project strictly fulfills all requirements of **TCS Industry-Aligned Capstone (Use Case B: Visual Quality Inspection System for Manufacturing)**:
+1. **Industry-Relevant Problem**: Zero-defect manufacturing quality control with asymmetric error weighting.
+2. **Deep Learning Core**: PyTorch ResNet-50 transfer learning exceeding the 95% defect recall mandate (**97.87% achieved**).
+3. **Multi-Domain Ingestion**: Evaluated across 16 industrial categories (MVTec AD + Real Foundry Casting data).
+4. **Edge Deployment**: Physical wiring schematic, hardware abstraction layer, and sub-100ms inference on Raspberry Pi 5.
+5. **Human-in-the-Loop Governance**: Streamlit QC triage for low-confidence (< 80%) cases with DVC feedback versioning.
+6. **Production MLOps**: Containerized microservices, BentoML serving, and Prometheus/Grafana observability.
+
+### Complete Jury Defense Manual
+For comprehensive technical defense preparation—including **20 tough jury questions & answers**, **physics calculations for pneumatic valve delays**, and a **minute-by-minute speaking script**—refer to:
+* **Word Document Guide**: [`Visual_Quality_Inspection_System_Jury_Defense_Guide.docx`](Visual_Quality_Inspection_System_Jury_Defense_Guide.docx)
+* **Plain Text Guide**: [`Visual_Quality_Inspection_System_Jury_Defense_Guide.txt`](Visual_Quality_Inspection_System_Jury_Defense_Guide.txt)
 
 ---
 
-## 18. Placing Your Replit Frontend into `frontend/`
-
-The `frontend/` directory has been intentionally created and left **completely empty**.
-
-### Steps to Integrate Your Replit Frontend:
-1. Export or download your frontend project zip/files from Replit.
-2. Extract or copy the entire contents directly into `frontend/`:
-   ```bash
-   # Example:
-   cp -r /path/to/replit-frontend/* frontend/
-   ```
-3. Your `frontend/` folder will then contain your standard frontend structure (e.g. `package.json`, `src/`, `vite.config.js` or `next.config.js`).
-4. In your frontend configuration or `.env`, point the API Base URL to the FastAPI backend:
-   ```env
-   VITE_API_BASE_URL=http://localhost:8000
-   ```
-5. Install frontend dependencies and run:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
----
-
-## 19. How Replit Frontend Communicates with the Backend API
-
-The FastAPI backend has CORS enabled (`allow_origins=["*"]`) and provides the following REST interfaces for the frontend:
-
-1. **Submit Inspection**: `POST http://localhost:8000/api/v1/inspection/predict` (Multipart FormData with `image`, `product_category`).
-2. **Inspection History**: `GET http://localhost:8000/api/v1/inspection/history?page=1&page_size=20`.
-3. **Inspection Details**: `GET http://localhost:8000/api/v1/inspection/{inspection_id}`.
-4. **Summary Metrics**: `GET http://localhost:8000/api/v1/inspection/stats/summary`.
-5. **Submit Feedback**: `POST http://localhost:8000/api/v1/feedback`.
-6. **System Status**: `GET http://localhost:8000/api/v1/system/status`.
-
----
-
-## 20. Running Automated Tests
-
-```bash
-# Run all unit and integration tests across ML and Backend
-pytest ml/tests backend/tests -v
-```
+## 📄 License
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+* **MVTec AD Dataset**: Distributed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+* **Casting Product Image Data**: Distributed under [CC0: Public Domain](https://creativecommons.org/publicdomain/zero/1.0/).
