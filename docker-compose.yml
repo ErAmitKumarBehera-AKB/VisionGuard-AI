@@ -92,7 +92,7 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "5173:80"
+      - "8089:80"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/health"]
       interval: 15s

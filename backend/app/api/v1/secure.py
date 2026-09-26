@@ -91,11 +91,16 @@ def update_me(payload:dict, user=Depends(require_admin)):
 
 @router.get("/admin/dashboard")
 def admin_dashboard(admin=Depends(require_admin)):
-    ensure_mongo(); d=db(); total=d.inspections.count_documents({"registered":True}); defects=d.inspections.count_documents({"registered":True,"final_label":"DEFECT"}); pending=d.inspections.count_documents({"prediction":"DEFECT","review_required":True,"review_completed":False})
+    ensure_mongo()
+    d = db()
+    total_ok = d.audit_logs.count_documents({"action": "OK_FRAME_IGNORED"})
+    defects = d.audit_logs.count_documents({"action": "DEFECT_CANDIDATE_CREATED"})
+    total = total_ok + defects
+    pending = d.inspections.count_documents({"prediction": "DEFECT", "review_required": True, "review_completed": False})
     current_model=d.model_versions.find_one({"status":"PRODUCTION"},{"_id":0})
     checkpoint=Path(settings.MODEL_CHECKPOINT_PATH)
     if not current_model and checkpoint.is_file(): current_model={"model_name":"ResNet-50 Defect Detector","model_version":"checkpoint-"+checkpoint.stem,"architecture":"resnet50","status":"AVAILABLE","deployment_status":"LOCAL_CHECKPOINT"}
-    return {"machine":clean(d.machines.find_one({"status":"ACTIVE"}, sort=[("machine_code",1)])),"total_inspections":total,"total_ok":d.inspections.count_documents({"registered":True,"final_label":"OK"}),"total_defect":defects,"defect_rate":round(defects/total*100,2) if total else 0,"pending_human_reviews":pending,"active_users":d.users.count_documents({"is_active":True}),"roles":1,"audit_events":d.audit_logs.count_documents({}),"policy_alerts":0,"administrators":d.users.count_documents({"role":"ADMIN","is_active":True}),"active_machines":d.machines.count_documents({"status":"ACTIVE"}),"current_model":current_model}
+    return {"machine":clean(d.machines.find_one({"status":"ACTIVE"}, sort=[("machine_code",1)])),"total_inspections":total,"total_ok":total_ok,"total_defect":defects,"defect_rate":round(defects/total*100,2) if total else 0,"pending_human_reviews":pending,"active_users":d.users.count_documents({"is_active":True}),"roles":1,"audit_events":d.audit_logs.count_documents({}),"policy_alerts":0,"administrators":d.users.count_documents({"role":"ADMIN","is_active":True}),"active_machines":d.machines.count_documents({"status":"ACTIVE"}),"current_model":current_model}
 
 @router.get("/admin/inspections")
 def all_inspections(machine_id: str | None = None, admin=Depends(require_admin)):

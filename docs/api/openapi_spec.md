@@ -14,7 +14,7 @@ This guide details how external frontends (such as your future Replit-generated 
 ## CORS Configuration
 
 The backend is configured with FastAPI `CORSMiddleware` supporting:
-- Origins: `*`, `http://localhost:3000`, `http://localhost:5173`, Replit subdomains
+- Origins: `*`, `http://localhost:3000`, `http://localhost:5173`, `http://localhost:8089`, Replit subdomains
 - Methods: `GET`, `POST`, `OPTIONS`
 - Headers: `*`
 

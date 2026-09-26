@@ -3,6 +3,18 @@ import type { DashboardStats, Feedback, Inspection, Model, InspectionStatus, Not
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 const cachedInspections: Inspection[] = [];
 const cachedFeedback: Feedback[] = [];
+const TOKEN_KEY = 'vi-token';
+
+export const getAuthToken = () => {
+  const tabToken = sessionStorage.getItem(TOKEN_KEY);
+  if (tabToken) return tabToken;
+  const legacyToken = localStorage.getItem(TOKEN_KEY);
+  if (legacyToken) {
+    sessionStorage.setItem(TOKEN_KEY, legacyToken);
+    localStorage.removeItem(TOKEN_KEY);
+  }
+  return legacyToken;
+};
 
 const normalizeUser = (value: any): User => ({ id: value.id ?? value._id ?? '', name: value.name ?? value.full_name ?? '', email: value.email ?? '', role: 'USER', organization: value.organization ?? '', jobTitle: value.jobTitle ?? value.job_title ?? '', employeeId: value.employeeId ?? value.employee_id ?? '', plantName: value.plantName ?? value.plant_name ?? '', status: value.is_active === false ? 'SUSPENDED' : 'ACTIVE', createdAt: value.created_at ?? new Date().toISOString(), lastLogin: value.last_login ?? new Date().toISOString() });
 
@@ -11,7 +23,7 @@ const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
   if (!(options?.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers: (() => { const token = localStorage.getItem('vi-token'); if (token) headers.set('Authorization', `Bearer ${token}`); return headers; })(),
+    headers: (() => { const token = getAuthToken(); if (token) headers.set('Authorization', `Bearer ${token}`); return headers; })(),
     credentials: 'include',
   });
   if (!response.ok) {
@@ -28,17 +40,17 @@ export const authService = {
     return request<any>('/auth/register', { method: 'POST', body: JSON.stringify({ email: payload.email, password: payload.password, full_name: payload.fullName, employee_id: payload.employeeId }) });
   },
   login(email: string, password: string) {
-    return request<any>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }).then(value => { localStorage.setItem('vi-token', value.access_token); return normalizeUser(value.user); });
+    return request<any>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }).then(value => { sessionStorage.setItem(TOKEN_KEY, value.access_token); return normalizeUser(value.user); });
   },
   current() {
-    const token = localStorage.getItem('vi-token'); return token ? request<any>('/auth/me').then(normalizeUser) : Promise.resolve(null);
+    const token = getAuthToken(); return token ? request<any>('/auth/me').then(normalizeUser) : Promise.resolve(null);
   },
   changePassword(currentPassword: string, newPassword: string) { return request<any>('/auth/me/password', { method: 'PUT', body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) }); },
   updateProfile(payload: Partial<Pick<User, 'name' | 'organization' | 'jobTitle' | 'employeeId' | 'plantName'>>) {
     return request<any>('/auth/me', { method: 'PUT', body: JSON.stringify({ full_name: payload.name, organization: payload.organization, job_title: payload.jobTitle, employee_id: payload.employeeId, plant_name: payload.plantName }) }).then(normalizeUser);
   },
   logout() {
-    localStorage.removeItem('vi-token'); return Promise.resolve();
+    sessionStorage.removeItem(TOKEN_KEY); localStorage.removeItem(TOKEN_KEY); return Promise.resolve();
   },
 };
 

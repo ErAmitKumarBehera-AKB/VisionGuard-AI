@@ -94,7 +94,7 @@ graph TD
     end
 
     subgraph User Experience & HITL Tier
-        FastAPI --> WebApp["React 18 / Vite Web App with Live Camera (:5173)"]
+        FastAPI --> WebApp["React 18 / Vite Web App with Live Camera (:8089 deployed, :5173 dev)"]
         FastAPI --> Streamlit["Streamlit Human-in-the-Loop QC (:8501)"]
         Streamlit --> OperatorAction["Operator Verification & Correction"]
         OperatorAction --> DVC["DVC Retraining Pool"]
@@ -198,7 +198,7 @@ The system integrates real-time camera acquisition using standard USB webcams, i
 
 | Acquisition Mode | Technology | Capabilities | Use Case |
 |---|---|---|---|
-| **Web-Based Live Camera** | HTML5 MediaDevices / WebRTC | Real-time viewport, interactive ROI focus box, digital zoom, mirror mode | Interactive operator workstation (`:5173/inspect`) |
+| **Web-Based Live Camera** | HTML5 MediaDevices / WebRTC | Real-time viewport, interactive ROI focus box, digital zoom, mirror mode | Interactive operator workstation (`:8089/inspect`) |
 | **Direct OpenCV Camera** | OpenCV (`cv2.VideoCapture`) | Direct frame grabbing from `/dev/video0`, configurable resolution (640x480 up to 4K) | Automated script runner & headless capture (`edge/scripts/camera_interface.py`) |
 | **Diagnostic Fallback** | PIL Synthetic Generator | Mock frame generator with simulated OK/DEFECT cycles | Automated testing and CI/CD validation without physical camera hardware |
 
@@ -224,8 +224,9 @@ python edge/scripts/edge_runner.py --cycles 10
 * **Side-by-Side Review**: Operators inspect photographic evidence and confirm or correct labels.
 * **Retraining Pipeline Integration**: Approved corrections enter the DVC retraining pool.
 
-### B. React 18 / Vite VisionInspect AI Web App (`:5173`)
-* Accessible at `http://localhost:5173`.
+### B. React 18 / Vite VisionInspect AI Web App (`:8089` deployed, `:5173` development)
+* Docker deployment: `http://localhost:8089`.
+* Local Vite development: `http://localhost:5173`.
 * **Live Camera Interface**: Connects to webcams, industrial cameras, or Insta360 4K sensors with zoom, mirror, and ROI bounding box framing.
 * **Operational KPI Dashboard**: Real-time pass rates, defect rates, average latency, and line statistics.
 * **Machine Administration**: Configure multiple conveyor lines and view model registry statuses.
@@ -311,7 +312,7 @@ docker compose down
 ```
 
 ### Deployed Services Port Mapping
-* **Web Application**: `http://localhost:5173`
+* **Web Application**: `http://localhost:8089`
 * **FastAPI Backend (Swagger Docs)**: `http://localhost:8000/docs`
 * **Streamlit QC Interface**: `http://localhost:8501`
 * **BentoML Model Serving**: `http://localhost:3000`
