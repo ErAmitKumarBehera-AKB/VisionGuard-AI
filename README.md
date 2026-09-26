@@ -46,7 +46,7 @@ flowchart TD
         direction TB
         B["BentoML Model Serving (:3000)"]
         F["FastAPI Backend (:8000)"]
-        DB[("Audit Database (SQLite/PostgreSQL)")]
+        DB[("Audit Database (MongoDB)")]
         QC["Streamlit QC Interface (:8501)"]
         UI["React Frontend Dashboard (:5173)"]
         M["Prometheus & Grafana (:9090 / :3001)"]

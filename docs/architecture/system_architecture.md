@@ -33,7 +33,7 @@ graph TD
         Checkpoint --> Bento["BentoML Microservice (:3000)"]
         Telemetry --> Backend["FastAPI Backend (:8000)"]
         Bento --> Backend
-        Backend --> DB[(SQLite / PostgreSQL Audit DB)]
+        Backend --> DB[(MongoDB Audit DB)]
     end
 
     subgraph Human & Analytics Tier
